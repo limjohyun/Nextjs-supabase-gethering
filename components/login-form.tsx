@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { GoogleSignInButton } from "@/components/google-signin-button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -93,6 +95,15 @@ export function LoginForm({
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
             </div>
+            <div className="relative my-4">
+              <Separator />
+              <span className="absolute inset-0 -top-2.5 flex justify-center">
+                <span className="bg-card px-2 text-xs text-muted-foreground">
+                  Or continue with
+                </span>
+              </span>
+            </div>
+            <GoogleSignInButton />
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{" "}
               <Link
