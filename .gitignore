@@ -40,3 +40,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local tool state (Claude Code / MCP servers)
+.claude/settings.local.json
+.playwright-mcp/
+shrimp_data/

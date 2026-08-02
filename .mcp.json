@@ -23,10 +23,8 @@
       "args": ["shadcn@latest", "mcp"]
     },
     "shrimp-task-manager": {
-      "command": "node",
-      "args": [
-        "C:\\Users\\ljohy\\workspace\\nextjs-supabase-app\\mcp-shrimp-task-manager\\dist\\index.js"
-      ],
+      "command": "npx",
+      "args": ["-y", "mcp-shrimp-task-manager"],
       "env": {
         "DATA_DIR": "C:\\Users\\ljohy\\workspace\\nextjs-supabase-app\\shrimp_data",
         "TEMPLATES_USE": "en",

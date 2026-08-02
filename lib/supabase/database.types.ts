@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      events: {
+        Row: {
+          capacity: number
+          category: string
+          created_at: string
+          description: string | null
+          event_datetime: string
+          host_id: string
+          id: string
+          location: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          capacity: number
+          category: string
+          created_at?: string
+          description?: string | null
+          event_datetime: string
+          host_id: string
+          id?: string
+          location: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          event_datetime?: string
+          host_id?: string
+          id?: string
+          location?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       instruments: {
         Row: {
           id: number
