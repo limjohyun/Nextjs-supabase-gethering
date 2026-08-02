@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { EventInfoTab } from "@/components/events/event-info-tab";
+import { EventParticipantsTab } from "@/components/events/event-participants-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/server";
 
@@ -58,7 +59,7 @@ async function EventDetailContent({
           <p className="text-sm text-muted-foreground">공지 준비 중</p>
         </TabsContent>
         <TabsContent value="participants">
-          <p className="text-sm text-muted-foreground">참여자 준비 중</p>
+          <EventParticipantsTab isHost={isHost} />
         </TabsContent>
         <TabsContent value="carpool">
           <p className="text-sm text-muted-foreground">카풀 준비 중</p>
