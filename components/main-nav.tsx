@@ -6,12 +6,13 @@ import { hasEnvVars } from "@/lib/utils";
 
 export function MainNav() {
   return (
-    <nav className="flex h-16 w-full justify-center border-b border-b-foreground/10">
+    <nav className="hidden h-16 w-full justify-center border-b border-b-foreground/10 sm:flex">
       <div className="flex w-full max-w-5xl items-center justify-between p-3 px-5 text-sm">
         <div className="flex items-center gap-5 font-semibold">
           <Link href="/events">모임 목록</Link>
           <Link href="/events/new">모임 만들기</Link>
           <Link href="/my">내 모임</Link>
+          <Link href="/profile">프로필</Link>
         </div>
         {!hasEnvVars ? (
           <EnvVarWarning />
