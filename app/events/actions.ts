@@ -33,6 +33,7 @@ export async function createEvent(
       location: parsed.data.location,
       event_datetime: new Date(parsed.data.eventDatetime).toISOString(),
       capacity: parsed.data.capacity,
+      cover_image_url: parsed.data.coverImageUrl || null,
     })
     .select("id")
     .single();
@@ -64,6 +65,7 @@ export async function updateEvent(
       location: parsed.data.location,
       event_datetime: new Date(parsed.data.eventDatetime).toISOString(),
       capacity: parsed.data.capacity,
+      cover_image_url: parsed.data.coverImageUrl || null,
     })
     .eq("id", eventId);
 

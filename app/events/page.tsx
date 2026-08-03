@@ -8,8 +8,28 @@ async function EventsList() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("events")
-    .select("id, title, category, event_datetime, location, capacity")
+    .select(
+      "id, title, category, event_datetime, location, capacity, status, cover_image_url, profiles!events_host_id_fkey(full_name, avatar_url)",
+    )
     .order("event_datetime", { ascending: true });
+
+  const eventIds = (data ?? []).map((event) => event.id);
+  const { data: approvedParticipants } =
+    eventIds.length > 0
+      ? await supabase
+          .from("event_participants")
+          .select("event_id")
+          .in("event_id", eventIds)
+          .eq("status", "approved")
+      : { data: [] };
+
+  const participantCountByEvent = new Map<string, number>();
+  for (const participant of approvedParticipants ?? []) {
+    participantCountByEvent.set(
+      participant.event_id,
+      (participantCountByEvent.get(participant.event_id) ?? 0) + 1,
+    );
+  }
 
   const events: EventCardData[] = (data ?? []).map((event) => ({
     id: event.id,
@@ -18,8 +38,11 @@ async function EventsList() {
     eventDatetime: event.event_datetime,
     location: event.location,
     capacity: event.capacity,
-    // 참여자 수 연동은 Phase 2-B(event_participants)에서 채워짐
-    participantCount: 0,
+    status: event.status,
+    coverImageUrl: event.cover_image_url ?? undefined,
+    hostName: event.profiles?.full_name ?? undefined,
+    hostAvatarUrl: event.profiles?.avatar_url ?? undefined,
+    participantCount: participantCountByEvent.get(event.id) ?? 0,
   }));
 
   if (events.length === 0) {

@@ -38,6 +38,7 @@ async function EditEventContent({
     location: event.location,
     eventDatetime: toDatetimeLocalValue(event.event_datetime),
     capacity: event.capacity,
+    coverImageUrl: event.cover_image_url ?? "",
   };
 
   return (

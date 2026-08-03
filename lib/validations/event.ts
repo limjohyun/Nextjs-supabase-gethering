@@ -12,6 +12,11 @@ export const eventFormSchema = z.object({
     .number("정원을 입력해주세요.")
     .int()
     .min(1, "정원은 1명 이상이어야 합니다."),
+  coverImageUrl: z
+    .string()
+    .url("올바른 URL을 입력해주세요.")
+    .optional()
+    .or(z.literal("")),
 });
 
 export type EventFormValues = z.infer<typeof eventFormSchema>;

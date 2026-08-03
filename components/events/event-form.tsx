@@ -50,6 +50,7 @@ export function EventForm({
       location: "",
       eventDatetime: "",
       capacity: 1,
+      coverImageUrl: "",
       ...defaultValues,
     },
   });
@@ -162,6 +163,19 @@ export function EventForm({
                   onBlur={field.onBlur}
                   onChange={(e) => field.onChange(e.target.valueAsNumber)}
                 />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="coverImageUrl"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>커버 이미지 URL</FormLabel>
+              <FormControl>
+                <Input placeholder="https://example.com/image.jpg" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
