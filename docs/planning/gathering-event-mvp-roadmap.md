@@ -117,12 +117,14 @@
 
 #### 2-B. 데이터 연동
 
-- [ ] `event_participants` 테이블 마이그레이션 추가(id, event_id, user_id, status, applied_at, UNIQUE(event_id, user_id))
-- [ ] RLS 정책: 본인 신청 생성/취소는 `auth.uid() = user_id`, 승인/거절은 해당 모임 `host_id`만, 조회는 신청자 본인 또는 해당 모임 주최자
-- [ ] `database.types.ts` 재생성 및 커밋
-- [ ] 참여 신청/승인/거절/취소를 Server Action으로 연결(중복 신청 방지는 UNIQUE 제약 + UI 비활성화 이중 처리)
-- [ ] 내 모임 페이지를 실 데이터(주최한 모임: `events.host_id = auth.uid()`, 참여한 모임: `event_participants.user_id = auth.uid()` 조인)로 연결
-- [ ] 참여자 목록에 `profiles`(full_name/avatar_url/username) 조인 표시 완성(F021)
+- [x] `event_participants` 테이블 마이그레이션 추가(id, event_id, user_id, status, applied_at, UNIQUE(event_id, user_id))
+- [x] RLS 정책: 본인 신청 생성/취소는 `auth.uid() = user_id`, 승인/거절은 해당 모임 `host_id`만, 조회는 신청자 본인 또는 해당 모임 주최자
+- [x] `database.types.ts` 재생성 및 커밋
+- [x] 참여 신청/승인/거절/취소를 Server Action으로 연결(중복 신청 방지는 UNIQUE 제약 + UI 비활성화 이중 처리)
+- [x] 내 모임 페이지를 실 데이터(주최한 모임: `events.host_id = auth.uid()`, 참여한 모임: `event_participants.user_id = auth.uid()` 조인)로 연결
+- [x] 참여자 목록에 `profiles`(full_name/avatar_url/username) 조인 표시 완성(F021)
+
+**✅ 2-B 완료** — 브라우저 실사용 검증(실 Supabase 데이터, 실제 두 계정 간 상호작용)까지 통과: 주최자 계정에서 참여자 승인 클릭 → 상태 반영, 참여자 계정에서 참여 신청/취소 클릭 → 상태 반영, `/my` 페이지가 로그인 사용자 기준 주최/참여 목록을 정확히 분리 표시. DB 레벨에서 중복 신청 시 `event_participants_event_id_user_id_key` unique 제약 위반 확인. 참여자 취소 RLS는 `with check (auth.uid() = user_id and status = 'cancelled')`로 제한해, 본인 신청 행을 승인 상태로 자가 변경(자가 승인)하는 권한 상승 경로를 원천 차단. `get_advisors` 점검 결과 신규 테이블 관련 보안 항목 없음(기존 leaked-password-protection 경고만 존재, 무관).
 
 #### 예상 완료 결과물
 
@@ -130,15 +132,23 @@
 
 #### 완료 기준(체크리스트)
 
-- [ ] 동일 사용자가 동일 모임에 중복 신청 불가(DB 제약 + UI 양쪽에서 확인)
-- [ ] 주최자만 승인/거절 가능, 참여자는 본인 신청만 취소 가능(RLS로 검증)
-- [ ] 내 모임 페이지의 "주최한 모임"/"참여한 모임" 목록이 실제 로그인 사용자 기준으로 정확히 분리되어 표시됨
-- [ ] `npm run lint`, `npm run typecheck`, `npm run build` 통과
+- [x] 동일 사용자가 동일 모임에 중복 신청 불가(DB 제약 + UI 양쪽에서 확인)
+- [x] 주최자만 승인/거절 가능, 참여자는 본인 신청만 취소 가능(RLS로 검증)
+- [x] 내 모임 페이지의 "주최한 모임"/"참여한 모임" 목록이 실제 로그인 사용자 기준으로 정확히 분리되어 표시됨
+- [x] `npm run lint`, `npm run typecheck`, `npm run build` 통과
 
 #### 위험 요소
 
 - **후속 페이즈 의존성**: 이 페이즈의 `event_participants`가 공지/카풀/정산 조회 RLS("승인된 참여자만 조회")의 전제 조건 → 여기서 상태값(pending/approved/rejected/cancelled) 정의가 흔들리면 이후 3개 페이즈의 정책을 다시 손봐야 함
 - **동시 신청/취소 경합**: 승인 처리 중 참여자가 취소하는 등 상태 전이 경합 가능성 → Server Action에서 최신 상태 재확인 후 처리
+
+---
+
+### 🎨 UI/UX 개선 페이즈 (Phase 2와 Phase 3 사이에 삽입)
+
+Phase 2 완료 후, Gather 앱 참고 이미지를 바탕으로 지금까지 만든 화면(랜딩·모임 목록·내 모임·모임 생성)의 시각적 완성도를 끌어올리는 별도 페이즈 묶음을 진행했다. 상세 내용은 별도 문서 [`gathering-event-mvp-ui-ux-roadmap.md`](./gathering-event-mvp-ui-ux-roadmap.md)(Phase UX-1~UX-5)를 참고.
+
+**✅ 완료** — UX-1(디자인 토대) ~ UX-5(반응형 하단 네비게이션) 전체 완료. 이제 아래 Phase 3(공지)부터 재개한다.
 
 ---
 
@@ -281,15 +291,16 @@
 
 ## 주요 마일스톤
 
-| 마일스톤             | 완료 기준              | 핵심 산출물                                             | 상태               |
-| -------------------- | ---------------------- | ------------------------------------------------------- | ------------------ |
-| M0. 앱 골격 완성     | Phase 0 완료 기준 충족 | 전체 라우트/네비게이션/탭 구조(mock 데이터)             | ✅ 완료            |
-| M1. 모임 골격 동작   | Phase 1 완료 기준 충족 | 모임 생성/목록/상세/수정/취소 실 데이터 연동            | ✅ 완료            |
-| M2. 참여자 관리 동작 | Phase 2 완료 기준 충족 | 참여 신청/승인/거절/취소, 내 모임 페이지 실 데이터 연동 | ⬜ 대기(다음 단계) |
-| M3. 공지 동작        | Phase 3 완료 기준 충족 | 공지 작성/목록 실 데이터 연동                           | ⬜ 대기            |
-| M4. 카풀 동작        | Phase 4 완료 기준 충족 | 카풀 등록/좌석 신청/확정(하드 블록) 실 데이터 연동      | ⬜ 대기            |
-| M5. 정산 동작        | Phase 5 완료 기준 충족 | 비용 항목 등록/1·N 분담/정산 완료 체크 실 데이터 연동   | ⬜ 대기            |
-| M6. MVP 배포 완료    | Phase 6 완료 기준 충족 | 프로덕션 배포 + 통합 QA 통과 + 문서화 반영              | ⬜ 대기            |
+| 마일스톤              | 완료 기준                                                                             | 핵심 산출물                                              | 상태    |
+| --------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------- |
+| M0. 앱 골격 완성      | Phase 0 완료 기준 충족                                                                | 전체 라우트/네비게이션/탭 구조(mock 데이터)              | ✅ 완료 |
+| M1. 모임 골격 동작    | Phase 1 완료 기준 충족                                                                | 모임 생성/목록/상세/수정/취소 실 데이터 연동             | ✅ 완료 |
+| M2. 참여자 관리 동작  | Phase 2 완료 기준 충족                                                                | 참여 신청/승인/거절/취소, 내 모임 페이지 실 데이터 연동  | ✅ 완료 |
+| M2.5. UI/UX 개선 완료 | [UI/UX 로드맵](./gathering-event-mvp-ui-ux-roadmap.md) Phase UX-1~UX-5 완료 기준 충족 | 랜딩 리뉴얼, 카드형 목록, 프로필 페이지, 반응형 하단 nav | ✅ 완료 |
+| M3. 공지 동작         | Phase 3 완료 기준 충족                                                                | 공지 작성/목록 실 데이터 연동                            | ⬜ 대기 |
+| M4. 카풀 동작         | Phase 4 완료 기준 충족                                                                | 카풀 등록/좌석 신청/확정(하드 블록) 실 데이터 연동       | ⬜ 대기 |
+| M5. 정산 동작         | Phase 5 완료 기준 충족                                                                | 비용 항목 등록/1·N 분담/정산 완료 체크 실 데이터 연동    | ⬜ 대기 |
+| M6. MVP 배포 완료     | Phase 6 완료 기준 충족                                                                | 프로덕션 배포 + 통합 QA 통과 + 문서화 반영               | ⬜ 대기 |
 
 ## 크로스컷팅 관심사(Cross-cutting Concerns)
 
@@ -303,7 +314,7 @@
 ### 배포 계획
 
 - Phase 0~5는 로컬(개발 Supabase 프로젝트) 기준으로 진행하고, Phase 6에서 원격 Supabase 프로젝트에 `supabase/migrations`를 일괄 적용한 뒤 Vercel에 배포한다.
-- 마이그레이션은 각 기능 페이즈(1-B~5-B)에서 순차적으로 추가되므로, 원격 적용 시에도 동일한 순서(`events` → `event_participants` → `announcements` → `carpools`/`carpool_requests` → `settlements`/`settlement_shares`)로 쌓인 마이그레이션 파일을 그대로 적용하면 된다.
+- 마이그레이션은 각 기능 페이즈(1-B~5-B)에서 순차적으로 추가되므로, 원격 적용 시에도 동일한 순서(`events` → `event_participants` → `events.cover_image_url`(UI/UX 개선 페이즈) → `announcements` → `carpools`/`carpool_requests` → `settlements`/`settlement_shares`)로 쌓인 마이그레이션 파일을 그대로 적용하면 된다.
 
 ### 문서화 계획
 
@@ -323,6 +334,9 @@ Phase 1 (모임 골격 UI → events 연동)
    ▼
 Phase 2 (참여자 관리 UI → event_participants 연동)  ★ 후속 3개 페이즈의 RLS 전제 조건
    │
+   ▼
+🎨 UI/UX 개선 페이즈 (별도 문서: gathering-event-mvp-ui-ux-roadmap.md, Phase UX-1~UX-5)
+   │
    ├──▶ Phase 3 (공지 UI → announcements 연동)
    ├──▶ Phase 4 (카풀 UI → carpools/carpool_requests 연동)
    └──▶ Phase 5 (정산 UI → settlements/settlement_shares 연동)
@@ -332,6 +346,7 @@ Phase 2 (참여자 관리 UI → event_participants 연동)  ★ 후속 3개 페
 ```
 
 - Phase 3~5는 서로 데이터 의존성이 없어 순서를 바꾸거나(예: 카풀보다 정산을 먼저) 병행해도 무방하다. 다만 Phase 2(참여자 관리)가 끝나기 전에는 착수하지 않는다 — "승인된 참여자만 조회" RLS 패턴이 `event_participants.status = 'approved'`를 참조하기 때문이다.
+- Phase 2와 Phase 3 사이에는 UI/UX 개선 페이즈([`gathering-event-mvp-ui-ux-roadmap.md`](./gathering-event-mvp-ui-ux-roadmap.md))가 끼어든다. 데이터 모델에는 영향이 없지만(카드/랜딩/프로필 UI 작업), `events.cover_image_url` 컬럼이 추가되므로 Phase 3~5의 마이그레이션보다 먼저 적용되어야 마이그레이션 순서가 꼬이지 않는다.
 - 각 페이즈 내부는 A(UI) → B(데이터 연동) 순서를 반드시 지킨다. B 단계를 A 단계보다 먼저 시작하지 않는다(구조 우선 원칙).
 
 ## 성공 기준
