@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { getEventDisplayStatus } from "@/lib/events/status";
 
 export function EventInfoTab({
   eventId,
@@ -77,7 +78,7 @@ export function EventInfoTab({
         </div>
         <div className="flex gap-2">
           <dt className="w-20 text-muted-foreground">상태</dt>
-          <dd>{status === "cancelled" ? "취소됨" : "모집 중"}</dd>
+          <dd>{getEventDisplayStatus(eventDatetime, status)}</dd>
         </div>
       </dl>
 
