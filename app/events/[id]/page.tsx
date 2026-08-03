@@ -2,7 +2,11 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { EventInfoTab } from "@/components/events/event-info-tab";
-import { EventParticipantsTab } from "@/components/events/event-participants-tab";
+import {
+  EventParticipantsTab,
+  type MyParticipationData,
+  type ParticipantData,
+} from "@/components/events/event-participants-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/server";
 
@@ -31,11 +35,38 @@ async function EventDetailContent({
   const isHost = currentUserId === event.host_id;
   const hostName = event.profiles?.full_name ?? "알 수 없음";
 
+  let participants: ParticipantData[] = [];
+  let myParticipation: MyParticipationData | null = null;
+
+  if (isHost) {
+    const { data } = await supabase
+      .from("event_participants")
+      .select("id, status, profiles!event_participants_user_id_fkey(full_name)")
+      .eq("event_id", id)
+      .order("applied_at", { ascending: true });
+    participants = (data ?? []).map((p) => ({
+      id: p.id,
+      status: p.status as ParticipantData["status"],
+      name: p.profiles?.full_name ?? "알 수 없음",
+    }));
+  } else if (currentUserId) {
+    const { data } = await supabase
+      .from("event_participants")
+      .select("id, status")
+      .eq("event_id", id)
+      .eq("user_id", currentUserId)
+      .maybeSingle();
+    myParticipation = data
+      ? { id: data.id, status: data.status as MyParticipationData["status"] }
+      : null;
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-bold">{event.title}</h1>
       <Tabs defaultValue="info">
-        <TabsList>
+        {/* 모바일에서 탭 터치 타겟이 WCAG 최소 권장 크기(44px)에 가깝도록 h-11, sm 이상은 기존 h-9 유지 */}
+        <TabsList className="!h-11 sm:!h-9">
           <TabsTrigger value="info">기본정보</TabsTrigger>
           <TabsTrigger value="announcements">공지</TabsTrigger>
           <TabsTrigger value="participants">참여자</TabsTrigger>
@@ -59,7 +90,12 @@ async function EventDetailContent({
           <p className="text-sm text-muted-foreground">공지 준비 중</p>
         </TabsContent>
         <TabsContent value="participants">
-          <EventParticipantsTab isHost={isHost} />
+          <EventParticipantsTab
+            eventId={event.id}
+            isHost={isHost}
+            participants={participants}
+            myParticipation={myParticipation}
+          />
         </TabsContent>
         <TabsContent value="carpool">
           <p className="text-sm text-muted-foreground">카풀 준비 중</p>

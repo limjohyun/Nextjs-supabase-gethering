@@ -1,15 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
+import {
+  applyToEvent,
+  approveParticipant,
+  cancelParticipation,
+  rejectParticipant,
+} from "@/app/events/[id]/participants-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 type ParticipantStatus = "pending" | "approved" | "rejected" | "cancelled";
 
-type MockParticipant = {
+export type ParticipantData = {
   id: string;
+  status: ParticipantStatus;
   name: string;
+};
+
+export type MyParticipationData = {
+  id: string;
   status: ParticipantStatus;
 };
 
@@ -30,52 +42,96 @@ const STATUS_VARIANT: Record<
   cancelled: "secondary",
 };
 
-const initialParticipants: MockParticipant[] = [
-  { id: "p1", name: "김참여", status: "approved" },
-  { id: "p2", name: "이신청", status: "pending" },
-];
+export function EventParticipantsTab({
+  eventId,
+  isHost,
+  participants,
+  myParticipation,
+}: {
+  eventId: string;
+  isHost: boolean;
+  participants: ParticipantData[];
+  myParticipation: MyParticipationData | null;
+}) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
-export function EventParticipantsTab({ isHost }: { isHost: boolean }) {
-  const [participants, setParticipants] =
-    useState<MockParticipant[]>(initialParticipants);
-  // 참여자 시점 mock 상태 - event_participants 테이블이 없는 Phase 2-A에서는
-  // 로컬 state로만 참여 신청/취소 흐름을 흉내낸다(Phase 2-B에서 실 데이터로 교체).
-  const [myStatus, setMyStatus] = useState<ParticipantStatus | null>(null);
-
-  function handleApprove(id: string) {
-    setParticipants((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, status: "approved" } : p)),
-    );
+  function handleApply() {
+    setError(null);
+    startTransition(async () => {
+      const result = await applyToEvent(eventId);
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+      router.refresh();
+    });
   }
 
-  function handleReject(id: string) {
-    setParticipants((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, status: "rejected" } : p)),
-    );
+  function handleCancel(participantId: string) {
+    setError(null);
+    startTransition(async () => {
+      const result = await cancelParticipation(eventId, participantId);
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+      router.refresh();
+    });
+  }
+
+  function handleApprove(participantId: string) {
+    setError(null);
+    startTransition(async () => {
+      const result = await approveParticipant(eventId, participantId);
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+      router.refresh();
+    });
+  }
+
+  function handleReject(participantId: string) {
+    setError(null);
+    startTransition(async () => {
+      const result = await rejectParticipant(eventId, participantId);
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+      router.refresh();
+    });
   }
 
   return (
     <div className="flex flex-col gap-6">
+      {error && <p className="text-sm text-destructive">{error}</p>}
+
       {!isHost && (
         <div className="flex items-center gap-3">
           <Button
-            onClick={() => setMyStatus("pending")}
-            disabled={myStatus !== null}
+            onClick={handleApply}
+            disabled={isPending || myParticipation !== null}
           >
-            {myStatus ? "신청 완료" : "참여 신청"}
+            {myParticipation ? "신청 완료" : "참여 신청"}
           </Button>
-          {myStatus && (
+          {myParticipation && (
             <>
-              <Badge variant={STATUS_VARIANT[myStatus]}>
-                {STATUS_LABEL[myStatus]}
+              <Badge variant={STATUS_VARIANT[myParticipation.status]}>
+                {STATUS_LABEL[myParticipation.status]}
               </Badge>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setMyStatus(null)}
-              >
-                참여 취소
-              </Button>
+              {myParticipation.status !== "cancelled" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={isPending}
+                  onClick={() => handleCancel(myParticipation.id)}
+                >
+                  참여 취소
+                </Button>
+              )}
             </>
           )}
         </div>
@@ -110,6 +166,7 @@ export function EventParticipantsTab({ isHost }: { isHost: boolean }) {
                       <Button
                         size="sm"
                         variant="outline"
+                        disabled={isPending}
                         onClick={() => handleApprove(participant.id)}
                       >
                         승인
@@ -117,6 +174,7 @@ export function EventParticipantsTab({ isHost }: { isHost: boolean }) {
                       <Button
                         size="sm"
                         variant="destructive"
+                        disabled={isPending}
                         onClick={() => handleReject(participant.id)}
                       >
                         거절

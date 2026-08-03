@@ -14,10 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      event_participants: {
+        Row: {
+          applied_at: string
+          event_id: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string
+          event_id: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          applied_at?: string
+          event_id?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           capacity: number
           category: string
+          cover_image_url: string | null
           created_at: string
           description: string | null
           event_datetime: string
@@ -31,6 +71,7 @@ export type Database = {
         Insert: {
           capacity: number
           category: string
+          cover_image_url?: string | null
           created_at?: string
           description?: string | null
           event_datetime: string
@@ -44,6 +85,7 @@ export type Database = {
         Update: {
           capacity?: number
           category?: string
+          cover_image_url?: string | null
           created_at?: string
           description?: string | null
           event_datetime?: string
