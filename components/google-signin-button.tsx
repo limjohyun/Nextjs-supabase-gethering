@@ -29,7 +29,7 @@ export function GoogleSignInButton() {
       if (error) throw error;
       // 성공 시 브라우저가 구글 로그인 페이지로 이동하므로 별도 후속 처리 불필요
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(error instanceof Error ? error.message : "오류가 발생했습니다.");
       setIsLoading(false);
     }
   };
@@ -61,7 +61,7 @@ export function GoogleSignInButton() {
             fill="#EA4335"
           />
         </svg>
-        {isLoading ? "Redirecting..." : "Continue with Google"}
+        {isLoading ? "이동 중..." : "Google로 계속하기"}
       </Button>
       {error && <p className="text-sm text-red-500">{error}</p>}
     </div>

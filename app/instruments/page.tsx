@@ -10,7 +10,7 @@ async function InstrumentsData() {
 
 export default function Instruments() {
   return (
-    <Suspense fallback={<div>Loading instruments...</div>}>
+    <Suspense fallback={<div>악기 목록을 불러오는 중...</div>}>
       <InstrumentsData />
     </Suspense>
   );
