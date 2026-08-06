@@ -128,6 +128,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          role: string
           updated_at: string
           username: string | null
           website: string | null
@@ -138,6 +139,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          role?: string
           updated_at?: string
           username?: string | null
           website?: string | null
@@ -148,6 +150,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          role?: string
           updated_at?: string
           username?: string | null
           website?: string | null
@@ -159,7 +162,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
