@@ -4,16 +4,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-```bash
-npm run dev           # Start dev server (localhost:3000)
-npm run build         # Production build
-npm run start         # Serve the production build
-npm run lint          # ESLint (next/core-web-vitals + next/typescript)
-npm run typecheck     # tsc --noEmit
-npm run format        # Prettier --write
-npm run format:check  # Prettier --check
-```
-
 Husky + lint-staged run ESLint (`--fix`) and Prettier on staged files on `git commit` (see `.husky/pre-commit`).
 
 There is no test script/framework configured in this project (no `test` entry in `package.json`, no test runner installed). Don't assume Vitest/Jest exists.
