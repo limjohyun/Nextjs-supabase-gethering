@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { CalendarCheck, Megaphone, Users } from "lucide-react";
 
 import { AuthButton } from "@/components/auth-button";
+import { BottomNav } from "@/components/bottom-nav";
 import { EnvVarWarning } from "@/components/env-var-warning";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { Button } from "@/components/ui/button";
@@ -57,8 +58,8 @@ async function LandingCta() {
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center">
-      <div className="flex w-full flex-1 flex-col items-center gap-20">
-        <nav className="flex h-16 w-full justify-center border-b border-b-foreground/10">
+      <div className="flex w-full flex-1 flex-col items-center gap-12 pb-20 sm:gap-20 sm:pb-0">
+        <nav className="border-b-foreground/10 hidden h-16 w-full justify-center border-b sm:flex">
           <div className="flex w-full max-w-5xl items-center justify-between p-3 px-5 text-sm">
             <Link href="/" className="font-semibold">
               모임 이벤트 관리
@@ -73,11 +74,11 @@ export default function Home() {
           </div>
         </nav>
 
-        <div className="flex max-w-2xl flex-1 flex-col items-center gap-6 p-5 text-center">
-          <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">
+        <div className="flex max-w-2xl flex-1 flex-col items-center gap-6 p-5 pt-10 text-center sm:pt-5">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
             모임 이벤트 관리
           </h1>
-          <p className="max-w-xl text-lg text-muted-foreground">
+          <p className="text-muted-foreground max-w-xl text-base sm:text-lg">
             수영·헬스·친구모임의 공지·참여자·카풀·정산을 한 곳에서 관리하세요.
           </p>
           <Suspense
@@ -95,7 +96,7 @@ export default function Home() {
           {FEATURES.map((feature) => (
             <Card key={feature.title}>
               <CardHeader className="gap-2">
-                <feature.icon className="h-6 w-6 text-muted-foreground" />
+                <feature.icon className="text-muted-foreground h-6 w-6" />
                 <CardTitle className="text-base">{feature.title}</CardTitle>
                 <CardDescription>{feature.description}</CardDescription>
               </CardHeader>
@@ -105,7 +106,6 @@ export default function Home() {
 
         <footer className="mx-auto flex w-full items-center justify-center gap-8 border-t py-16 text-center text-xs">
           <p>
-            Powered by{" "}
             <a
               href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
               target="_blank"
@@ -114,10 +114,14 @@ export default function Home() {
             >
               Supabase
             </a>
+            로 만들었습니다
           </p>
           <ThemeSwitcher />
         </footer>
       </div>
+      <Suspense fallback={null}>
+        <BottomNav />
+      </Suspense>
     </main>
   );
 }
