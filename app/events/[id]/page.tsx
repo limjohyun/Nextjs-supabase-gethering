@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import { EventAnnouncementsTab } from "@/components/events/event-announcements-tab";
 import { EventInfoTab } from "@/components/events/event-info-tab";
 import {
   EventParticipantsTab,
@@ -87,7 +88,7 @@ async function EventDetailContent({
           />
         </TabsContent>
         <TabsContent value="announcements">
-          <p className="text-sm text-muted-foreground">공지 준비 중</p>
+          <EventAnnouncementsTab isHost={isHost} />
         </TabsContent>
         <TabsContent value="participants">
           <EventParticipantsTab
@@ -98,10 +99,10 @@ async function EventDetailContent({
           />
         </TabsContent>
         <TabsContent value="carpool">
-          <p className="text-sm text-muted-foreground">카풀 준비 중</p>
+          <p className="text-muted-foreground text-sm">카풀 준비 중</p>
         </TabsContent>
         <TabsContent value="settlement">
-          <p className="text-sm text-muted-foreground">정산 준비 중</p>
+          <p className="text-muted-foreground text-sm">정산 준비 중</p>
         </TabsContent>
       </Tabs>
     </div>
@@ -115,7 +116,7 @@ export default function EventDetailPage({
 }) {
   return (
     <Suspense
-      fallback={<p className="text-sm text-muted-foreground">불러오는 중...</p>}
+      fallback={<p className="text-muted-foreground text-sm">불러오는 중...</p>}
     >
       <EventDetailContent params={params} />
     </Suspense>
