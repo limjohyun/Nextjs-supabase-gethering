@@ -5,6 +5,7 @@ import {
   EventAnnouncementsTab,
   type AnnouncementData,
 } from "@/components/events/event-announcements-tab";
+import { EventCarpoolTab } from "@/components/events/event-carpool-tab";
 import { EventInfoTab } from "@/components/events/event-info-tab";
 import {
   EventParticipantsTab,
@@ -123,7 +124,7 @@ async function EventDetailContent({
           />
         </TabsContent>
         <TabsContent value="carpool">
-          <p className="text-muted-foreground text-sm">카풀 준비 중</p>
+          <EventCarpoolTab />
         </TabsContent>
         <TabsContent value="settlement">
           <p className="text-muted-foreground text-sm">정산 준비 중</p>
