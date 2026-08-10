@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AdminUserRoleToggle } from "@/components/admin-user-role-toggle";
 import { EventCard, type EventCardData } from "@/components/events/event-card";
 import {
   EVENT_DISPLAY_STATUS_VARIANT,
@@ -24,18 +25,22 @@ import { createClient } from "@/lib/supabase/server";
 async function AdminDashboardContent() {
   const supabase = await createClient();
 
-  const [{ data: events }, { data: profiles }] = await Promise.all([
-    supabase
-      .from("events")
-      .select(
-        "id, title, category, event_datetime, location, capacity, status, cover_image_url, profiles!events_host_id_fkey(full_name, avatar_url)",
-      )
-      .order("event_datetime", { ascending: false }),
-    supabase
-      .from("profiles")
-      .select("id, full_name, username, avatar_url, role, created_at")
-      .order("created_at", { ascending: false }),
-  ]);
+  const [{ data: events }, { data: profiles }, { data: userData }] =
+    await Promise.all([
+      supabase
+        .from("events")
+        .select(
+          "id, title, category, event_datetime, location, capacity, status, cover_image_url, profiles!events_host_id_fkey(full_name, avatar_url)",
+        )
+        .order("event_datetime", { ascending: false }),
+      supabase
+        .from("profiles")
+        .select("id, full_name, username, avatar_url, role, created_at")
+        .order("created_at", { ascending: false }),
+      supabase.auth.getClaims(),
+    ]);
+
+  const currentUserId = userData?.claims?.sub as string | undefined;
 
   const eventIds = (events ?? []).map((event) => event.id);
   const { data: approvedParticipants } =
@@ -120,6 +125,7 @@ async function AdminDashboardContent() {
                   <TableHead>사용자</TableHead>
                   <TableHead>권한</TableHead>
                   <TableHead>가입일</TableHead>
+                  <TableHead>작업</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -158,6 +164,13 @@ async function AdminDashboardContent() {
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {new Date(profile.created_at).toLocaleDateString("ko-KR")}
+                    </TableCell>
+                    <TableCell>
+                      <AdminUserRoleToggle
+                        userId={profile.id}
+                        role={profile.role}
+                        isSelf={profile.id === currentUserId}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
