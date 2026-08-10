@@ -45,3 +45,6 @@ next-env.d.ts
 .claude/settings.local.json
 .playwright-mcp/
 shrimp_data/
+
+# 이슈 트래커 (보안/버그/개선사항) - public repo라 로컬에서만 관리
+docs/issue.md
