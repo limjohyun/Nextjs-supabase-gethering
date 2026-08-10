@@ -1,9 +1,11 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 
+import { createAnnouncement } from "@/app/events/[id]/announcements-actions";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -25,30 +27,18 @@ export type AnnouncementData = {
   createdAt: string;
 };
 
-// createdAt 내림차순(최신순)으로 미리 정렬해둔다 — B단계에서 order("created_at", { ascending: false })로 그대로 교체 가능.
-const initialAnnouncements: AnnouncementData[] = [
-  {
-    id: "a3",
-    content: "이번 주 모임은 우천으로 실내 수영장으로 변경되었습니다.",
-    createdAt: "2026-08-09T10:00:00+09:00",
-  },
-  {
-    id: "a2",
-    content: "준비물: 수영모, 수경, 개인 물통을 꼭 챙겨주세요.",
-    createdAt: "2026-08-05T14:30:00+09:00",
-  },
-  {
-    id: "a1",
-    content:
-      "모임에 오신 걸 환영합니다! 첫 모임은 간단한 자기소개로 시작할게요.",
-    createdAt: "2026-08-01T09:00:00+09:00",
-  },
-];
-
-export function EventAnnouncementsTab({ isHost }: { isHost: boolean }) {
-  const [announcements, setAnnouncements] =
-    useState<AnnouncementData[]>(initialAnnouncements);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export function EventAnnouncementsTab({
+  eventId,
+  isHost,
+  announcements,
+}: {
+  eventId: string;
+  isHost: boolean;
+  announcements: AnnouncementData[];
+}) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<AnnouncementFormValues>({
     resolver: zodResolver(announcementFormSchema),
@@ -56,17 +46,16 @@ export function EventAnnouncementsTab({ isHost }: { isHost: boolean }) {
   });
 
   function onSubmit(values: AnnouncementFormValues) {
-    setIsSubmitting(true);
-    setAnnouncements((prev) => [
-      {
-        id: crypto.randomUUID(),
-        content: values.content,
-        createdAt: new Date().toISOString(),
-      },
-      ...prev,
-    ]);
-    form.reset();
-    setIsSubmitting(false);
+    setError(null);
+    startTransition(async () => {
+      const result = await createAnnouncement(eventId, values.content);
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+      form.reset();
+      router.refresh();
+    });
   }
 
   return (
@@ -93,12 +82,9 @@ export function EventAnnouncementsTab({ isHost }: { isHost: boolean }) {
                 </FormItem>
               )}
             />
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="self-start"
-            >
-              {isSubmitting ? "처리 중..." : "공지 등록"}
+            {error && <p className="text-destructive text-sm">{error}</p>}
+            <Button type="submit" disabled={isPending} className="self-start">
+              {isPending ? "처리 중..." : "공지 등록"}
             </Button>
           </form>
         </Form>

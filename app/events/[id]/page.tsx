@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { EventAnnouncementsTab } from "@/components/events/event-announcements-tab";
+import {
+  EventAnnouncementsTab,
+  type AnnouncementData,
+} from "@/components/events/event-announcements-tab";
 import { EventInfoTab } from "@/components/events/event-info-tab";
 import {
   EventParticipantsTab,
@@ -19,13 +22,22 @@ async function EventDetailContent({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: event, error }, { data: userData }] = await Promise.all([
+  const [
+    { data: event, error },
+    { data: userData },
+    { data: announcementsData },
+  ] = await Promise.all([
     supabase
       .from("events")
       .select("*, profiles!events_host_id_fkey(full_name)")
       .eq("id", id)
       .single(),
     supabase.auth.getClaims(),
+    supabase
+      .from("announcements")
+      .select("id, content, created_at")
+      .eq("event_id", id)
+      .order("created_at", { ascending: false }),
   ]);
 
   if (error || !event) {
@@ -35,6 +47,14 @@ async function EventDetailContent({
   const currentUserId = userData?.claims?.sub as string | undefined;
   const isHost = currentUserId === event.host_id;
   const hostName = event.profiles?.full_name ?? "알 수 없음";
+
+  const announcements: AnnouncementData[] = (announcementsData ?? []).map(
+    (announcement) => ({
+      id: announcement.id,
+      content: announcement.content,
+      createdAt: announcement.created_at,
+    }),
+  );
 
   let participants: ParticipantData[] = [];
   let myParticipation: MyParticipationData | null = null;
@@ -88,7 +108,11 @@ async function EventDetailContent({
           />
         </TabsContent>
         <TabsContent value="announcements">
-          <EventAnnouncementsTab isHost={isHost} />
+          <EventAnnouncementsTab
+            eventId={event.id}
+            isHost={isHost}
+            announcements={announcements}
+          />
         </TabsContent>
         <TabsContent value="participants">
           <EventParticipantsTab

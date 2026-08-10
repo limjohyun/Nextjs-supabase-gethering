@@ -163,10 +163,10 @@ Phase 2 완료 후, Gather 앱 참고 이미지를 바탕으로 지금까지 만
 
 #### 3-B. 데이터 연동
 
-- [ ] `announcements` 테이블 마이그레이션 추가(id, event_id, content, created_at)
-- [ ] RLS 정책: 쓰기는 해당 모임 `host_id`만, 조회는 해당 모임의 승인된 참여자 또는 주최자(Phase 2의 `event_participants` 참조)
-- [ ] `database.types.ts` 재생성 및 커밋
-- [ ] 작성/목록 조회를 Server Action으로 연결, mock 제거
+- [x] `announcements` 테이블 마이그레이션 추가(id, event_id, content, created_at)
+- [x] RLS 정책: 쓰기는 해당 모임 `host_id`만, 조회는 해당 모임의 승인된 참여자 또는 주최자(Phase 2의 `event_participants` 참조)
+- [x] `database.types.ts` 재생성 및 커밋
+- [x] 작성/목록 조회를 Server Action으로 연결, mock 제거
 
 #### 예상 완료 결과물
 
@@ -174,9 +174,11 @@ Phase 2 완료 후, Gather 앱 참고 이미지를 바탕으로 지금까지 만
 
 #### 완료 기준(체크리스트)
 
-- [ ] 주최자가 아닌 사용자에게 공지 작성 UI가 노출되지 않음
-- [ ] 승인되지 않은 신청자(pending/rejected)에게는 공지 조회가 제한됨(RLS로 검증)
-- [ ] `npm run lint`, `npm run typecheck`, `npm run build` 통과
+- [x] 주최자가 아닌 사용자에게 공지 작성 UI가 노출되지 않음
+- [x] 승인되지 않은 신청자(pending/rejected)에게는 공지 조회가 제한됨(RLS로 검증)
+- [x] `npm run lint`, `npm run typecheck`, `npm run build` 통과
+
+**✅ 완료** — 브라우저 실사용 검증(실 Supabase 데이터)까지 통과: 주최자 계정에서 공지 작성 → 목록 최상단 반영 확인. RLS는 SQL 트랜잭션(롤백)으로 3가지 경로 모두 직접 검증: ①비참여자/비주최자는 조회 0건, ②승인된 참여자로 임시 등록 후 조회 시 1건 정상 노출, ③비주최자가 INSERT 시도 시 "new row violates row-level security policy" 예외로 거부. `get_advisors` 점검 결과 신규 테이블 관련 보안 항목 없음.
 
 #### 위험 요소
 
@@ -297,7 +299,7 @@ Phase 2 완료 후, Gather 앱 참고 이미지를 바탕으로 지금까지 만
 | M1. 모임 골격 동작    | Phase 1 완료 기준 충족                                                                | 모임 생성/목록/상세/수정/취소 실 데이터 연동             | ✅ 완료 |
 | M2. 참여자 관리 동작  | Phase 2 완료 기준 충족                                                                | 참여 신청/승인/거절/취소, 내 모임 페이지 실 데이터 연동  | ✅ 완료 |
 | M2.5. UI/UX 개선 완료 | [UI/UX 로드맵](./gathering-event-mvp-ui-ux-roadmap.md) Phase UX-1~UX-5 완료 기준 충족 | 랜딩 리뉴얼, 카드형 목록, 프로필 페이지, 반응형 하단 nav | ✅ 완료 |
-| M3. 공지 동작         | Phase 3 완료 기준 충족                                                                | 공지 작성/목록 실 데이터 연동                            | ⬜ 대기 |
+| M3. 공지 동작         | Phase 3 완료 기준 충족                                                                | 공지 작성/목록 실 데이터 연동                            | ✅ 완료 |
 | M4. 카풀 동작         | Phase 4 완료 기준 충족                                                                | 카풀 등록/좌석 신청/확정(하드 블록) 실 데이터 연동       | ⬜ 대기 |
 | M5. 정산 동작         | Phase 5 완료 기준 충족                                                                | 비용 항목 등록/1·N 분담/정산 완료 체크 실 데이터 연동    | ⬜ 대기 |
 | M6. MVP 배포 완료     | Phase 6 완료 기준 충족                                                                | 프로덕션 배포 + 통합 QA 통과 + 문서화 반영               | ⬜ 대기 |

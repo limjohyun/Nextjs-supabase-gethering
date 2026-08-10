@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          content: string
+          created_at: string
+          event_id: string
+          id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          event_id: string
+          id?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_participants: {
         Row: {
           applied_at: string
