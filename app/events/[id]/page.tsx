@@ -5,7 +5,11 @@ import {
   EventAnnouncementsTab,
   type AnnouncementData,
 } from "@/components/events/event-announcements-tab";
-import { EventCarpoolTab } from "@/components/events/event-carpool-tab";
+import {
+  EventCarpoolTab,
+  type CarpoolData,
+  type CarpoolRequestData,
+} from "@/components/events/event-carpool-tab";
 import { EventInfoTab } from "@/components/events/event-info-tab";
 import {
   EventParticipantsTab,
@@ -27,6 +31,7 @@ async function EventDetailContent({
     { data: event, error },
     { data: userData },
     { data: announcementsData },
+    { data: carpoolsData },
   ] = await Promise.all([
     supabase
       .from("events")
@@ -39,6 +44,17 @@ async function EventDetailContent({
       .select("id, content, created_at")
       .eq("event_id", id)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("carpools")
+      .select(
+        "id, driver_id, departure_location, departure_time, seat_count, profiles!carpools_driver_id_fkey(full_name), carpool_requests(id, status, applied_at, profiles!carpool_requests_user_id_fkey(full_name))",
+      )
+      .eq("event_id", id)
+      .order("created_at", { ascending: true })
+      .order("applied_at", {
+        referencedTable: "carpool_requests",
+        ascending: true,
+      }),
   ]);
 
   if (error || !event) {
@@ -56,6 +72,20 @@ async function EventDetailContent({
       createdAt: announcement.created_at,
     }),
   );
+
+  const carpools: CarpoolData[] = (carpoolsData ?? []).map((carpool) => ({
+    id: carpool.id,
+    driverId: carpool.driver_id,
+    driverName: carpool.profiles?.full_name ?? "알 수 없음",
+    departureLocation: carpool.departure_location,
+    departureTime: carpool.departure_time,
+    seatCount: carpool.seat_count,
+    requests: (carpool.carpool_requests ?? []).map((request) => ({
+      id: request.id,
+      requesterName: request.profiles?.full_name ?? "알 수 없음",
+      status: request.status as CarpoolRequestData["status"],
+    })),
+  }));
 
   let participants: ParticipantData[] = [];
   let myParticipation: MyParticipationData | null = null;
@@ -124,7 +154,11 @@ async function EventDetailContent({
           />
         </TabsContent>
         <TabsContent value="carpool">
-          <EventCarpoolTab />
+          <EventCarpoolTab
+            eventId={event.id}
+            currentUserId={currentUserId}
+            carpools={carpools}
+          />
         </TabsContent>
         <TabsContent value="settlement">
           <p className="text-muted-foreground text-sm">정산 준비 중</p>

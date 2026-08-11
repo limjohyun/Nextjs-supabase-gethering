@@ -198,11 +198,11 @@ Phase 2 완료 후, Gather 앱 참고 이미지를 바탕으로 지금까지 만
 
 #### 4-B. 데이터 연동
 
-- [ ] `carpools`, `carpool_requests` 테이블 마이그레이션 추가
-- [ ] RLS 정책: 카풀 등록/수정은 `auth.uid() = driver_id`, 좌석 신청은 로그인 사용자 본인, 확정 처리는 해당 카풀 `driver_id`만, 조회는 해당 모임 승인된 참여자
-- [ ] `database.types.ts` 재생성 및 커밋
-- [ ] 확정 처리 로직: `confirmed` 건수가 `seat_count`를 초과하면 서버 단(Server Action)에서 최신 카운트를 재조회해 확정 자체를 차단(경고만 하고 통과시키지 않음) — 동시 확정 요청에 대비해 처리 직전 재검증
-- [ ] mock 데이터 제거
+- [x] `carpools`, `carpool_requests` 테이블 마이그레이션 추가
+- [x] RLS 정책: 카풀 등록/수정은 `auth.uid() = driver_id`, 좌석 신청은 로그인 사용자 본인, 확정 처리는 해당 카풀 `driver_id`만, 조회는 해당 모임 승인된 참여자
+- [x] `database.types.ts` 재생성 및 커밋
+- [x] 확정 처리 로직: `confirmed` 건수가 `seat_count`를 초과하면 서버 단에서 차단 — `confirm_carpool_request` SECURITY DEFINER 함수가 `carpools` 행을 `SELECT ... FOR UPDATE`로 잠근 뒤 재검증해 동시 확정 요청에도 직렬화됨
+- [x] mock 데이터 제거
 
 #### 예상 완료 결과물
 
@@ -210,9 +210,9 @@ Phase 2 완료 후, Gather 앱 참고 이미지를 바탕으로 지금까지 만
 
 #### 완료 기준(체크리스트)
 
-- [ ] `seat_count`를 초과하는 확정 시도가 UI/서버 양쪽에서 모두 차단됨(수동으로 동시에 두 건 확정 시도해 재현 테스트)
-- [ ] 좌석 신청 1건 = 1석 규칙이 지켜짐(여러 좌석 필요 시 여러 번 신청)
-- [ ] `npm run lint`, `npm run typecheck`, `npm run build` 통과
+- [x] `seat_count`를 초과하는 확정 시도가 UI/서버 양쪽에서 모두 차단됨(SQL 트랜잭션으로 동시 확정 시나리오 재현 검증: 비운전자 차단/운전자 확정 성공/좌석 초과 시 두 번째 확정 차단 모두 확인)
+- [x] 좌석 신청 1건 = 1석 규칙이 지켜짐(여러 좌석 필요 시 여러 번 신청)
+- [x] `npm run lint`, `npm run typecheck`, `npm run build` 통과
 
 #### 위험 요소
 
@@ -300,7 +300,7 @@ Phase 2 완료 후, Gather 앱 참고 이미지를 바탕으로 지금까지 만
 | M2. 참여자 관리 동작  | Phase 2 완료 기준 충족                                                                | 참여 신청/승인/거절/취소, 내 모임 페이지 실 데이터 연동  | ✅ 완료 |
 | M2.5. UI/UX 개선 완료 | [UI/UX 로드맵](./gathering-event-mvp-ui-ux-roadmap.md) Phase UX-1~UX-5 완료 기준 충족 | 랜딩 리뉴얼, 카드형 목록, 프로필 페이지, 반응형 하단 nav | ✅ 완료 |
 | M3. 공지 동작         | Phase 3 완료 기준 충족                                                                | 공지 작성/목록 실 데이터 연동                            | ✅ 완료 |
-| M4. 카풀 동작         | Phase 4 완료 기준 충족                                                                | 카풀 등록/좌석 신청/확정(하드 블록) 실 데이터 연동       | ⬜ 대기 |
+| M4. 카풀 동작         | Phase 4 완료 기준 충족                                                                | 카풀 등록/좌석 신청/확정(하드 블록) 실 데이터 연동       | ✅ 완료 |
 | M5. 정산 동작         | Phase 5 완료 기준 충족                                                                | 비용 항목 등록/1·N 분담/정산 완료 체크 실 데이터 연동    | ⬜ 대기 |
 | M6. MVP 배포 완료     | Phase 6 완료 기준 충족                                                                | 프로덕션 배포 + 통합 QA 통과 + 문서화 반영               | ⬜ 대기 |
 

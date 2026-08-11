@@ -1,9 +1,15 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 
+import {
+  applyForSeat,
+  confirmCarpoolRequest,
+  createCarpool,
+} from "@/app/events/[id]/carpool-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,39 +42,18 @@ export type CarpoolData = {
   requests: CarpoolRequestData[];
 };
 
-// mock 단계 전용 sentinel — 실제 로그인 사용자가 아니며, 4-B에서 실제 auth.uid()로 교체된다.
-const CURRENT_USER_ID = "me";
-
-const initialCarpools: CarpoolData[] = [
-  {
-    id: "c1",
-    driverId: CURRENT_USER_ID,
-    driverName: "나",
-    departureLocation: "강남역 2번 출구",
-    departureTime: "2026-08-15T08:00:00+09:00",
-    seatCount: 3,
-    requests: [
-      { id: "r1", requesterName: "김철수", status: "confirmed" },
-      { id: "r2", requesterName: "이영희", status: "pending" },
-    ],
-  },
-  {
-    id: "c2",
-    driverId: "u2",
-    driverName: "박민수",
-    departureLocation: "잠실역 3번 출구",
-    departureTime: "2026-08-15T08:30:00+09:00",
-    seatCount: 2,
-    requests: [
-      { id: "r3", requesterName: "최지훈", status: "confirmed" },
-      { id: "r4", requesterName: "정다은", status: "confirmed" },
-    ],
-  },
-];
-
-export function EventCarpoolTab() {
-  const [carpools, setCarpools] = useState<CarpoolData[]>(initialCarpools);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export function EventCarpoolTab({
+  eventId,
+  currentUserId,
+  carpools,
+}: {
+  eventId: string;
+  currentUserId: string | undefined;
+  carpools: CarpoolData[];
+}) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<CarpoolFormValues>({
     resolver: zodResolver(carpoolFormSchema),
@@ -76,62 +61,46 @@ export function EventCarpoolTab() {
   });
 
   function onSubmit(values: CarpoolFormValues) {
-    setIsSubmitting(true);
-    setCarpools((prev) => [
-      {
-        id: crypto.randomUUID(),
-        driverId: CURRENT_USER_ID,
-        driverName: "나",
-        departureLocation: values.departureLocation,
-        departureTime: values.departureTime,
-        seatCount: values.seatCount,
-        requests: [],
-      },
-      ...prev,
-    ]);
-    form.reset({ departureLocation: "", departureTime: "", seatCount: 1 });
-    setIsSubmitting(false);
+    setError(null);
+    startTransition(async () => {
+      const result = await createCarpool(eventId, values);
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+      form.reset({ departureLocation: "", departureTime: "", seatCount: 1 });
+      router.refresh();
+    });
   }
 
   function handleApplySeat(carpoolId: string) {
-    setCarpools((prev) =>
-      prev.map((carpool) =>
-        carpool.id === carpoolId
-          ? {
-              ...carpool,
-              requests: [
-                ...carpool.requests,
-                {
-                  id: crypto.randomUUID(),
-                  requesterName: "나",
-                  status: "pending",
-                },
-              ],
-            }
-          : carpool,
-      ),
-    );
+    setError(null);
+    startTransition(async () => {
+      const result = await applyForSeat(eventId, carpoolId);
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+      router.refresh();
+    });
   }
 
-  function handleConfirmRequest(carpoolId: string, requestId: string) {
-    setCarpools((prev) =>
-      prev.map((carpool) =>
-        carpool.id === carpoolId
-          ? {
-              ...carpool,
-              requests: carpool.requests.map((request) =>
-                request.id === requestId
-                  ? { ...request, status: "confirmed" }
-                  : request,
-              ),
-            }
-          : carpool,
-      ),
-    );
+  function handleConfirmRequest(requestId: string) {
+    setError(null);
+    startTransition(async () => {
+      const result = await confirmCarpoolRequest(eventId, requestId);
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+      router.refresh();
+    });
   }
 
   return (
     <div className="flex flex-col gap-6">
+      {error && <p className="text-destructive text-sm">{error}</p>}
+
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -184,8 +153,8 @@ export function EventCarpoolTab() {
               </FormItem>
             )}
           />
-          <Button type="submit" disabled={isSubmitting} className="self-start">
-            {isSubmitting ? "처리 중..." : "카풀 등록"}
+          <Button type="submit" disabled={isPending} className="self-start">
+            {isPending ? "처리 중..." : "카풀 등록"}
           </Button>
         </form>
       </Form>
@@ -201,7 +170,7 @@ export function EventCarpoolTab() {
         ) : (
           <ul className="flex flex-col gap-3">
             {carpools.map((carpool) => {
-              const isDriver = carpool.driverId === CURRENT_USER_ID;
+              const isDriver = carpool.driverId === currentUserId;
               const confirmedCount = carpool.requests.filter(
                 (request) => request.status === "confirmed",
               ).length;
@@ -254,9 +223,9 @@ export function EventCarpoolTab() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  disabled={isFull}
+                                  disabled={isPending || isFull}
                                   onClick={() =>
-                                    handleConfirmRequest(carpool.id, request.id)
+                                    handleConfirmRequest(request.id)
                                   }
                                 >
                                   확정
@@ -272,6 +241,7 @@ export function EventCarpoolTab() {
                       size="sm"
                       variant="outline"
                       className="self-start"
+                      disabled={isPending}
                       onClick={() => handleApplySeat(carpool.id)}
                     >
                       좌석 신청

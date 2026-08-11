@@ -43,6 +43,90 @@ export type Database = {
           },
         ]
       }
+      carpool_requests: {
+        Row: {
+          applied_at: string
+          carpool_id: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string
+          carpool_id: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          applied_at?: string
+          carpool_id?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carpool_requests_carpool_id_fkey"
+            columns: ["carpool_id"]
+            isOneToOne: false
+            referencedRelation: "carpools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carpool_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      carpools: {
+        Row: {
+          created_at: string
+          departure_location: string
+          departure_time: string
+          driver_id: string
+          event_id: string
+          id: string
+          seat_count: number
+        }
+        Insert: {
+          created_at?: string
+          departure_location: string
+          departure_time: string
+          driver_id: string
+          event_id: string
+          id?: string
+          seat_count: number
+        }
+        Update: {
+          created_at?: string
+          departure_location?: string
+          departure_time?: string
+          driver_id?: string
+          event_id?: string
+          id?: string
+          seat_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carpools_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carpools_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_participants: {
         Row: {
           applied_at: string
@@ -191,6 +275,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      confirm_carpool_request: {
+        Args: { request_id: string }
+        Returns: undefined
+      }
       is_admin: { Args: never; Returns: boolean }
       set_user_role: {
         Args: { new_role: string; target_user_id: string }
