@@ -34,7 +34,7 @@ The root-level `proxy.ts` is this Next.js version's replacement for the old `mid
 
 ### Database types
 
-`lib/supabase/database.types.ts` is generated output (Supabase CLI / `mcp__supabase__generate_typescript_types`) and is committed to the repo — regenerate after schema changes with targeted `Edit` insertions rather than a full-file rewrite (a prior full rewrite introduced a type bug) or hand-editing (CI does not regenerate it, so a stale file only means stale types, not a broken build). `supabase/migrations/` mirrors the applied remote migration history 1:1 — after `apply_migration`, always confirm the exact assigned `version` via `list_migrations` before writing the matching local filename, rather than guessing a timestamp.
+`lib/supabase/database.types.ts` is generated output (Supabase CLI / `mcp__supabase__generate_typescript_types`) and is committed to the repo — regenerate after schema changes with targeted `Edit` insertions rather than a full-file rewrite (a prior full rewrite introduced a type bug) or hand-editing (CI does not regenerate it, so a stale file only means stale types, not a broken build). `supabase/migrations/` mirrors the applied remote migration history 1:1 — after `apply_migration`, always confirm the exact assigned `version` via `list_migrations` before writing the matching local filename, rather than guessing a timestamp. To bootstrap the first admin in a new environment, run `supabase/bootstrap-admin.sql` (a one-time manual script, not a migration) with `service_role` via the Supabase dashboard SQL Editor or `mcp__supabase__execute_sql`.
 
 ### UI components
 

@@ -15,7 +15,8 @@ nextjs-supabase-app/
 ├── components/            # 🧩 React 컴포넌트
 ├── lib/                   # 🛠️ 유틸리티, 검증 스키마, Supabase 클라이언트
 ├── supabase/
-│   └── migrations/        # 🗄️ 적용된 마이그레이션 이력(원격과 동기화, 직접 수정 금지)
+│   ├── migrations/        # 🗄️ 적용된 마이그레이션 이력(원격과 동기화, 직접 수정 금지)
+│   └── bootstrap-admin.sql # 🔑 최초 admin 지정용 1회성 수동 스크립트(마이그레이션 아님)
 ├── proxy.ts               # 🔐 세션 갱신/라우트 보호 (middleware.ts 대체)
 ├── components.json        # shadcn/ui 설정
 ├── next.config.ts         # Next.js 설정
@@ -126,7 +127,7 @@ lib/
 
 **폼 검증 패턴 (RHF + Zod)**: 기능별 입력 폼은 `lib/validations/<feature>.ts`에 Zod 스키마를 두고(`FormValues` 타입도 함께 export), 클라이언트 컴포넌트에서 `useForm({ resolver: zodResolver(schema) })` → `<Form><FormField>...<FormMessage /></Form>`(shadcn `components/ui/form.tsx`) 조합으로 렌더링, Server Action에서 `schema.safeParse(values)`로 다시 검증한 뒤 Supabase를 호출합니다. 체크박스로 여러 값을 고르는 필드(예: 결제자 다중 선택)는 shadcn 공식 문서의 "동일 `name`으로 `FormField`를 중첩 등록"하는 패턴을 쓰지 마세요 — 이 프로젝트의 zod 4 + `@hookform/resolvers` 5 조합에서 폼 전체의 에러 메시지 렌더링이 깨집니다. 대신 하나의 `FormField`(`render={({ field }) => ...}`) 안에서 여러 `Checkbox`를 매핑하고 `field.onChange`로 배열을 직접 갱신하세요(`components/events/event-settlement-tab.tsx` 참고).
 
-**Supabase 마이그레이션 컨벤션**: 스키마 변경은 `mcp__supabase__apply_migration`으로 원격에 적용한 뒤, 반드시 `mcp__supabase__list_migrations`로 실제 부여된 `version`을 확인하고 그 값을 파일명으로 써서 `supabase/migrations/<version>_<name>.sql`에 동일한 내용을 저장합니다(먼저 로컬 파일을 만들고 다른 타임스탬프를 붙이면 원격 이력과 어긋납니다). 이후 `mcp__supabase__generate_typescript_types`로 `database.types.ts`를 재생성하되, 파일 전체를 다시 쓰지 말고 변경된 테이블/함수 블록만 `Edit`으로 삽입하세요(전체 재작성은 과거 오탈자 버그를 낸 적이 있습니다). 마지막으로 `mcp__supabase__get_advisors`로 RLS 누락이나 의도치 않은 `anon`/`authenticated` 권한 노출이 없는지 확인합니다. 민감한 갱신(권한 승격, 동시성 제어가 필요한 확정/차감 로직 등)은 테이블 직접 권한을 최소화하고 `SECURITY DEFINER` 함수 하나만 공식 경로로 노출하는 패턴을 씁니다(`set_user_role`, `confirm_carpool_request`, `register_settlement_item` 참고).
+**Supabase 마이그레이션 컨벤션**: 스키마 변경은 `mcp__supabase__apply_migration`으로 원격에 적용한 뒤, 반드시 `mcp__supabase__list_migrations`로 실제 부여된 `version`을 확인하고 그 값을 파일명으로 써서 `supabase/migrations/<version>_<name>.sql`에 동일한 내용을 저장합니다(먼저 로컬 파일을 만들고 다른 타임스탬프를 붙이면 원격 이력과 어긋납니다). 이후 `mcp__supabase__generate_typescript_types`로 `database.types.ts`를 재생성하되, 파일 전체를 다시 쓰지 말고 변경된 테이블/함수 블록만 `Edit`으로 삽입하세요(전체 재작성은 과거 오탈자 버그를 낸 적이 있습니다). 마지막으로 `mcp__supabase__get_advisors`로 RLS 누락이나 의도치 않은 `anon`/`authenticated` 권한 노출이 없는지 확인합니다. 민감한 갱신(권한 승격, 동시성 제어가 필요한 확정/차감 로직 등)은 테이블 직접 권한을 최소화하고 `SECURITY DEFINER` 함수 하나만 공식 경로로 노출하는 패턴을 씁니다(`set_user_role`, `confirm_carpool_request`, `register_settlement_item` 참고). 최초 admin 지정처럼 스키마 변경이 아닌 1회성 수동 작업은 마이그레이션이 아니라 `supabase/bootstrap-admin.sql` 같은 별도 스크립트로 문서화합니다.
 
 ## 🏷️ 파일 네이밍 컨벤션
 
