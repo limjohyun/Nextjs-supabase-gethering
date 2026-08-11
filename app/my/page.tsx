@@ -11,7 +11,7 @@ async function MyEventsContent() {
 
   if (!userId) {
     return (
-      <p className="text-sm text-muted-foreground">로그인이 필요합니다.</p>
+      <p className="text-muted-foreground text-sm">로그인이 필요합니다.</p>
     );
   }
 
@@ -27,7 +27,7 @@ async function MyEventsContent() {
       supabase
         .from("event_participants")
         .select(
-          "id, status, events!event_participants_event_id_fkey(id, title)",
+          "id, status, events!event_participants_event_id_fkey(id, title, cover_image_url)",
         )
         .eq("user_id", userId)
         .order("applied_at", { ascending: true }),
@@ -74,6 +74,7 @@ async function MyEventsContent() {
       status: p.status as "pending" | "approved" | "rejected" | "cancelled",
       eventId: p.events!.id,
       title: p.events!.title,
+      coverImageUrl: p.events!.cover_image_url ?? undefined,
     }));
 
   return (
@@ -83,7 +84,7 @@ async function MyEventsContent() {
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">주최한 모임</h2>
         {hostedEventCards.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             아직 주최한 모임이 없습니다.
           </p>
         ) : (
@@ -100,7 +101,7 @@ async function MyEventsContent() {
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">참여한 모임</h2>
         {joinedEvents.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             아직 참여한 모임이 없습니다.
           </p>
         ) : (
@@ -118,7 +119,7 @@ async function MyEventsContent() {
 export default function MyEventsPage() {
   return (
     <Suspense
-      fallback={<p className="text-sm text-muted-foreground">불러오는 중...</p>}
+      fallback={<p className="text-muted-foreground text-sm">불러오는 중...</p>}
     >
       <MyEventsContent />
     </Suspense>

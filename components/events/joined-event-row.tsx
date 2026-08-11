@@ -1,5 +1,6 @@
 "use client";
 
+import { ImageIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -32,11 +33,13 @@ export function JoinedEventRow({
   eventId,
   title,
   status,
+  coverImageUrl,
 }: {
   participationId: string;
   eventId: string;
   title: string;
   status: ParticipationStatus;
+  coverImageUrl?: string | null;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -58,6 +61,17 @@ export function JoinedEventRow({
     <li className="flex flex-col gap-1">
       <div className="flex items-center justify-between rounded-md border p-3">
         <Link href={`/events/${eventId}`} className="flex items-center gap-2">
+          {coverImageUrl ? (
+            <img
+              src={coverImageUrl}
+              alt={title}
+              className="h-10 w-10 shrink-0 rounded-md object-cover"
+            />
+          ) : (
+            <div className="bg-muted text-muted-foreground flex h-10 w-10 shrink-0 items-center justify-center rounded-md">
+              <ImageIcon className="size-4" aria-hidden="true" />
+            </div>
+          )}
           <span className="text-sm font-medium">{title}</span>
           <Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>
         </Link>
@@ -72,7 +86,7 @@ export function JoinedEventRow({
           </Button>
         )}
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p className="text-destructive text-sm">{error}</p>}
     </li>
   );
 }

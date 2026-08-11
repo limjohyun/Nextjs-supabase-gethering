@@ -14,6 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -22,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { createClient } from "@/lib/supabase/client";
 import {
   EVENT_CATEGORIES,
   eventFormSchema,
@@ -41,6 +43,8 @@ export function EventForm({
 }) {
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
@@ -54,6 +58,48 @@ export function EventForm({
       ...defaultValues,
     },
   });
+
+  async function handleCoverImageFileChange(
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setCoverUploadError(null);
+    setIsUploadingCover(true);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setCoverUploadError("로그인이 필요합니다.");
+        return;
+      }
+
+      const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+      const path = `${user.id}/${Date.now()}-${safeName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("event-covers")
+        .upload(path, file);
+      if (uploadError) {
+        setCoverUploadError("이미지 업로드에 실패했습니다.");
+        return;
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("event-covers").getPublicUrl(path);
+      form.setValue("coverImageUrl", publicUrl, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    } finally {
+      setIsUploadingCover(false);
+      e.target.value = "";
+    }
+  }
 
   async function onSubmit(values: EventFormValues) {
     setServerError(null);
@@ -181,8 +227,24 @@ export function EventForm({
             </FormItem>
           )}
         />
+        <div className="grid gap-2">
+          <Label htmlFor="cover-image-file">또는 이미지 파일 업로드</Label>
+          <Input
+            id="cover-image-file"
+            type="file"
+            accept="image/*"
+            disabled={isUploadingCover}
+            onChange={handleCoverImageFileChange}
+          />
+          {isUploadingCover && (
+            <p className="text-muted-foreground text-xs">업로드 중...</p>
+          )}
+          {coverUploadError && (
+            <p className="text-destructive text-xs">{coverUploadError}</p>
+          )}
+        </div>
         {serverError && (
-          <p className="text-sm text-destructive">{serverError}</p>
+          <p className="text-destructive text-sm">{serverError}</p>
         )}
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? "처리 중..." : submitLabel}
