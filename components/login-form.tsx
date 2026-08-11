@@ -1,5 +1,7 @@
 "use client";
 
+import { isAuthApiError } from "@supabase/supabase-js";
+
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -26,6 +28,9 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isEmailNotConfirmed, setIsEmailNotConfirmed] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -33,13 +38,24 @@ export function LoginForm({
     const supabase = createClient();
     setIsLoading(true);
     setError(null);
+    setIsEmailNotConfirmed(false);
+    setResendSent(false);
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      if (error) throw error;
+      if (error) {
+        if (isAuthApiError(error) && error.code === "email_not_confirmed") {
+          setIsEmailNotConfirmed(true);
+          setError(
+            "이메일 인증이 완료되지 않았습니다. 받으신 메일함을 확인해주세요.",
+          );
+          return;
+        }
+        throw error;
+      }
       router.push("/");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "오류가 발생했습니다.");
@@ -47,6 +63,15 @@ export function LoginForm({
       setIsLoading(false);
     }
   };
+
+  async function handleResendConfirmation() {
+    const supabase = createClient();
+    setIsResending(true);
+    setResendSent(false);
+    const { error } = await supabase.auth.resend({ type: "signup", email });
+    setIsResending(false);
+    if (!error) setResendSent(true);
+  }
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -90,6 +115,24 @@ export function LoginForm({
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
+              {isEmailNotConfirmed && (
+                <div className="flex flex-col items-start gap-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isResending}
+                    onClick={handleResendConfirmation}
+                  >
+                    {isResending ? "재전송 중..." : "인증 메일 재전송"}
+                  </Button>
+                  {resendSent && (
+                    <p className="text-muted-foreground text-xs">
+                      인증 메일을 다시 보냈습니다.
+                    </p>
+                  )}
+                </div>
+              )}
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "로그인 중..." : "로그인"}
               </Button>
