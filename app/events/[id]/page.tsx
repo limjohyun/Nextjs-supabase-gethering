@@ -16,7 +16,11 @@ import {
   type MyParticipationData,
   type ParticipantData,
 } from "@/components/events/event-participants-tab";
-import { EventSettlementTab } from "@/components/events/event-settlement-tab";
+import {
+  EventSettlementTab,
+  type SettlementItemData,
+  type SettlementParticipantData,
+} from "@/components/events/event-settlement-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/server";
 
@@ -33,6 +37,9 @@ async function EventDetailContent({
     { data: userData },
     { data: announcementsData },
     { data: carpoolsData },
+    { data: approvedParticipantsData },
+    { data: settlementsData },
+    { data: settlementSharesData },
   ] = await Promise.all([
     supabase
       .from("events")
@@ -56,6 +63,23 @@ async function EventDetailContent({
         referencedTable: "carpool_requests",
         ascending: true,
       }),
+    supabase
+      .from("event_participants")
+      .select("user_id, profiles!event_participants_user_id_fkey(full_name)")
+      .eq("event_id", id)
+      .eq("status", "approved")
+      .order("applied_at", { ascending: true }),
+    supabase
+      .from("settlements")
+      .select(
+        "item_id, item_name, amount, created_at, profiles!settlements_payer_id_fkey(full_name)",
+      )
+      .eq("event_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("settlement_shares")
+      .select("user_id, amount_owed, is_paid")
+      .eq("event_id", id),
   ]);
 
   if (error || !event) {
@@ -87,6 +111,40 @@ async function EventDetailContent({
       status: request.status as CarpoolRequestData["status"],
     })),
   }));
+
+  const settlementItemsMap = new Map<string, SettlementItemData>();
+  for (const row of settlementsData ?? []) {
+    const payerName = row.profiles?.full_name ?? "알 수 없음";
+    const existing = settlementItemsMap.get(row.item_id);
+    if (existing) {
+      existing.amount += row.amount;
+      existing.payerNames.push(payerName);
+    } else {
+      settlementItemsMap.set(row.item_id, {
+        itemId: row.item_id,
+        name: row.item_name,
+        amount: row.amount,
+        payerNames: [payerName],
+      });
+    }
+  }
+  const settlementItems = Array.from(settlementItemsMap.values());
+
+  const sharesByUserId = new Map(
+    (settlementSharesData ?? []).map((share) => [share.user_id, share]),
+  );
+  const settlementParticipants: SettlementParticipantData[] = (
+    approvedParticipantsData ?? []
+  ).map((participant) => {
+    const share = sharesByUserId.get(participant.user_id);
+    return {
+      userId: participant.user_id,
+      name: participant.profiles?.full_name ?? "알 수 없음",
+      amountOwed: share?.amount_owed ?? 0,
+      isPaid: share?.is_paid ?? false,
+      hasShare: !!share,
+    };
+  });
 
   let participants: ParticipantData[] = [];
   let myParticipation: MyParticipationData | null = null;
@@ -162,7 +220,13 @@ async function EventDetailContent({
           />
         </TabsContent>
         <TabsContent value="settlement">
-          <EventSettlementTab isHost={isHost} />
+          <EventSettlementTab
+            eventId={event.id}
+            isHost={isHost}
+            currentUserId={currentUserId}
+            participants={settlementParticipants}
+            items={settlementItems}
+          />
         </TabsContent>
       </Tabs>
     </div>

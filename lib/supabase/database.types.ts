@@ -270,6 +270,93 @@ export type Database = {
         }
         Relationships: []
       }
+      settlement_shares: {
+        Row: {
+          amount_owed: number
+          event_id: string
+          id: string
+          is_paid: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_owed?: number
+          event_id: string
+          id?: string
+          is_paid?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_owed?: number
+          event_id?: string
+          id?: string
+          is_paid?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settlement_shares_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "settlement_shares_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      settlements: {
+        Row: {
+          amount: number
+          created_at: string
+          event_id: string
+          id: string
+          item_id: string
+          item_name: string
+          payer_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          event_id: string
+          id?: string
+          item_id?: string
+          item_name: string
+          payer_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          event_id?: string
+          id?: string
+          item_id?: string
+          item_name?: string
+          payer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settlements_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "settlements_payer_id_fkey"
+            columns: ["payer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -280,6 +367,15 @@ export type Database = {
         Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }
+      register_settlement_item: {
+        Args: {
+          p_amount: number
+          p_event_id: string
+          p_item_name: string
+          p_payer_ids: string[]
+        }
+        Returns: undefined
+      }
       set_user_role: {
         Args: { new_role: string; target_user_id: string }
         Returns: undefined

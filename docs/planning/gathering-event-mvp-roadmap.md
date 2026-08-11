@@ -232,12 +232,12 @@ Phase 2 완료 후, Gather 앱 참고 이미지를 바탕으로 지금까지 만
 
 #### 5-B. 데이터 연동
 
-- [ ] `settlements`, `settlement_shares` 테이블 마이그레이션 추가
-- [ ] RLS 정책: `settlements` 쓰기는 해당 모임 `host_id`만, `settlement_shares.is_paid` 갱신은 host 또는 본인(정책 방향은 구현 시 확정), 조회는 승인된 참여자
-- [ ] `database.types.ts` 재생성 및 커밋
-- [ ] 비용 항목 등록 시 결제자가 여러 명이면 항목 금액을 결제자 수로 1/N 분할해 각 결제자 앞으로 개별 `settlements` 행 생성
-- [ ] `settlement_shares` 재계산 로직: 비용 항목이 바뀔 때마다 참여자별 `amount_owed`를 참여자 수 기준 1/N로 재계산해 upsert하되, 기존 `is_paid` 값은 덮어쓰지 않고 보존
-- [ ] mock 데이터 제거
+- [x] `settlements`, `settlement_shares` 테이블 마이그레이션 추가
+- [x] RLS 정책: `settlements` 쓰기는 해당 모임 `host_id`만(`register_settlement_item` SECURITY DEFINER 함수를 통해서만 생성, 직접 INSERT 경로 없음), `settlement_shares.is_paid` 갱신은 host 또는 본인(컬럼 단위 권한으로 `is_paid`만 노출), 조회는 host/승인된 참여자
+- [x] `database.types.ts` 재생성 및 커밋
+- [x] 비용 항목 등록 시 결제자가 여러 명이면 항목 금액을 결제자 수로 1/N 분할해 각 결제자 앞으로 개별 `settlements` 행 생성
+- [x] `settlement_shares` 재계산 로직: 비용 항목이 바뀔 때마다 참여자별 `amount_owed`를 참여자 수 기준 1/N로 재계산해 upsert하되, 기존 `is_paid` 값은 덮어쓰지 않고 보존
+- [x] mock 데이터 제거
 
 #### 예상 완료 결과물
 
@@ -245,10 +245,10 @@ Phase 2 완료 후, Gather 앱 참고 이미지를 바탕으로 지금까지 만
 
 #### 완료 기준(체크리스트)
 
-- [ ] 결제자가 2명 이상인 항목이 1/N로 정확히 분할되어 각 결제자 앞으로 개별 기록됨
-- [ ] 참여자별 분담액이 참여자 수 기준 1/N로 정확히 계산됨
-- [ ] 비용 항목을 추가/수정한 뒤에도 이미 체크된 "정산 완료" 상태가 유지됨(재계산 시 `is_paid` 유실 여부를 직접 재현해 확인)
-- [ ] `npm run lint`, `npm run typecheck`, `npm run build` 통과
+- [x] 결제자가 2명 이상인 항목이 1/N로 정확히 분할되어 각 결제자 앞으로 개별 기록됨(나머지는 앞쪽 결제자부터 1원씩 배분, 합계가 원금액과 정확히 일치하도록 SQL로 검증)
+- [x] 참여자별 분담액이 참여자 수 기준 1/N로 정확히 계산됨
+- [x] 비용 항목을 추가/수정한 뒤에도 이미 체크된 "정산 완료" 상태가 유지됨(두 번째 항목 등록 후 `is_paid`가 그대로 `true`로 남아있음을 SQL로 직접 재현해 확인)
+- [x] `npm run lint`, `npm run typecheck`, `npm run build` 통과
 
 #### 위험 요소
 
@@ -301,7 +301,7 @@ Phase 2 완료 후, Gather 앱 참고 이미지를 바탕으로 지금까지 만
 | M2.5. UI/UX 개선 완료 | [UI/UX 로드맵](./gathering-event-mvp-ui-ux-roadmap.md) Phase UX-1~UX-5 완료 기준 충족 | 랜딩 리뉴얼, 카드형 목록, 프로필 페이지, 반응형 하단 nav | ✅ 완료 |
 | M3. 공지 동작         | Phase 3 완료 기준 충족                                                                | 공지 작성/목록 실 데이터 연동                            | ✅ 완료 |
 | M4. 카풀 동작         | Phase 4 완료 기준 충족                                                                | 카풀 등록/좌석 신청/확정(하드 블록) 실 데이터 연동       | ✅ 완료 |
-| M5. 정산 동작         | Phase 5 완료 기준 충족                                                                | 비용 항목 등록/1·N 분담/정산 완료 체크 실 데이터 연동    | ⬜ 대기 |
+| M5. 정산 동작         | Phase 5 완료 기준 충족                                                                | 비용 항목 등록/1·N 분담/정산 완료 체크 실 데이터 연동    | ✅ 완료 |
 | M6. MVP 배포 완료     | Phase 6 완료 기준 충족                                                                | 프로덕션 배포 + 통합 QA 통과 + 문서화 반영               | ⬜ 대기 |
 
 ## 크로스컷팅 관심사(Cross-cutting Concerns)
