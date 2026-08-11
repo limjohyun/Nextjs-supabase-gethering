@@ -38,7 +38,7 @@ The root-level `proxy.ts` is this Next.js version's replacement for the old `mid
 
 ### UI components
 
-shadcn/ui is configured via `components.json` (style: `new-york`, base color: `neutral`, RSC on). Path aliases (`tsconfig.json` + `components.json`): `@/components`, `@/components/ui`, `@/lib`. Add new shadcn components with `npx shadcn@latest add <name>` rather than hand-rolling primitives.
+shadcn/ui is configured via `components.json`. Add new shadcn components with `npx shadcn@latest add <name>` rather than hand-rolling primitives.
 
 `components/tutorial/*` and the `ConnectSupabaseSteps`/`SignUpUserSteps` UI on `/` are the starter kit's onboarding scaffolding (shown/hidden based on `hasEnvVars`) — treat them as template boilerplate, not app features to build on.
 
