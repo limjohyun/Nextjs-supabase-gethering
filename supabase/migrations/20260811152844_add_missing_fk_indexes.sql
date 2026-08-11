@@ -1,0 +1,10 @@
+create index if not exists idx_announcements_event_id on public.announcements (event_id);
+create index if not exists idx_carpool_requests_carpool_id on public.carpool_requests (carpool_id);
+create index if not exists idx_carpool_requests_user_id on public.carpool_requests (user_id);
+create index if not exists idx_carpools_driver_id on public.carpools (driver_id);
+create index if not exists idx_carpools_event_id on public.carpools (event_id);
+create index if not exists idx_event_participants_user_id on public.event_participants (user_id);
+create index if not exists idx_events_host_id on public.events (host_id);
+create index if not exists idx_settlement_shares_user_id on public.settlement_shares (user_id);
+create index if not exists idx_settlements_event_id on public.settlements (event_id);
+create index if not exists idx_settlements_payer_id on public.settlements (payer_id);

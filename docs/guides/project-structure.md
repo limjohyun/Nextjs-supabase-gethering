@@ -9,10 +9,13 @@
 ```
 nextjs-supabase-app/
 ├── docs/                   # 📚 프로젝트 문서
-│   └── guides/            # 개발 가이드 모음
+│   ├── guides/            # 개발 가이드 모음
+│   └── planning/          # PRD/로드맵 (모임 이벤트 관리 MVP)
 ├── app/                   # 🚀 Next.js App Router
 ├── components/            # 🧩 React 컴포넌트
-├── lib/                   # 🛠️ 유틸리티 및 Supabase 클라이언트
+├── lib/                   # 🛠️ 유틸리티, 검증 스키마, Supabase 클라이언트
+├── supabase/
+│   └── migrations/        # 🗄️ 적용된 마이그레이션 이력(원격과 동기화, 직접 수정 금지)
 ├── proxy.ts               # 🔐 세션 갱신/라우트 보호 (middleware.ts 대체)
 ├── components.json        # shadcn/ui 설정
 ├── next.config.ts         # Next.js 설정
@@ -27,23 +30,37 @@ nextjs-supabase-app/
 
 ```
 app/
-├── layout.tsx            # 🎨 루트 레이아웃 (전역 설정)
-├── page.tsx               # 🏠 홈페이지 (/)
-├── globals.css             # 🎨 전역 CSS 스타일
-├── favicon.ico             # 🔖 파비콘
-├── instruments/            # 예제 Server Component 데이터 패칭 페이지
+├── layout.tsx              # 🎨 루트 레이아웃 (전역 설정)
+├── page.tsx                 # 🏠 홈페이지 (/)
+├── globals.css               # 🎨 전역 CSS 스타일
+├── favicon.ico                # 🔖 파비콘
+├── instruments/                # 예제 Server Component 데이터 패칭 페이지
 │   └── page.tsx
-├── protected/              # 로그인 필요 영역
-│   ├── layout.tsx
-│   └── page.tsx
-└── auth/                   # 인증 관련 페이지 (로그인/가입/비번 재설정 등)
+├── events/                     # 📅 모임 이벤트 관리 (이 프로젝트의 핵심 기능)
+│   ├── page.tsx                  # 모임 목록
+│   ├── new/page.tsx               # 모임 생성
+│   ├── actions.ts                  # 생성/수정/취소 Server Actions
+│   └── [id]/
+│       ├── page.tsx                  # 모임 상세 (기본정보/공지/참여자/카풀/정산 탭)
+│       ├── edit/page.tsx              # 모임 수정
+│       ├── announcements-actions.ts    # 공지 Server Actions
+│       ├── participants-actions.ts     # 참여 신청/승인/거절 Server Actions
+│       ├── carpool-actions.ts          # 카풀 등록/좌석 신청/확정 Server Actions
+│       └── settlement-actions.ts       # 정산 항목 등록/완료 체크 Server Actions
+├── my/page.tsx                 # 내 모임(주최/참여) 목록
+├── profile/page.tsx            # 프로필
+├── admin/                      # 관리자 전용(역할 부여 등)
+│   ├── page.tsx
+│   └── actions.ts
+└── auth/                        # 인증 관련 페이지 (로그인/가입/비번 재설정 등)
     ├── login/page.tsx
     ├── sign-up/page.tsx
     ├── sign-up-success/page.tsx
     ├── forgot-password/page.tsx
     ├── update-password/page.tsx
     ├── error/page.tsx
-    └── confirm/route.ts    # 이메일 인증 콜백 라우트 핸들러
+    ├── callback/route.ts       # OAuth 콜백 라우트 핸들러
+    └── confirm/route.ts        # 이메일 인증 콜백 라우트 핸들러
 ```
 
 **🚀 App Router 규칙:**
@@ -53,30 +70,51 @@ app/
 - `loading.tsx`: 로딩 UI (필요시)
 - `error.tsx`: 에러 UI (필요시)
 - `not-found.tsx`: 404 페이지 (필요시)
+- `*-actions.ts`: 해당 라우트 세그먼트 전용 Server Actions는 라우트 폴더에 함께 둔다(`"use server"`). 여러 라우트에서 재사용되는 액션이 아니라면 `app/api/`에 별도 라우트 핸들러를 만들지 않는다.
 
 ### components/ - 컴포넌트 조직
 
 ```
 components/
-├── ui/                     # 🎛️ shadcn/ui 기본 컴포넌트 (button, card, input, label, badge, checkbox, dropdown-menu)
-├── tutorial/                # 스타터킷 온보딩 UI (env 미설정 시 노출되는 튜토리얼 스텝) — 앱 기능 아님
-├── auth-button.tsx           # 로그인 상태에 따른 헤더 버튼
-├── login-form.tsx            # 로그인 폼 (Client Component)
-├── sign-up-form.tsx          # 회원가입 폼
-├── forgot-password-form.tsx  # 비밀번호 찾기 폼
-├── update-password-form.tsx  # 비밀번호 변경 폼
+├── ui/                       # 🎛️ shadcn/ui 기본 컴포넌트 (button, card, input, table, checkbox, form, tabs 등)
+├── events/                    # 📅 모임 기능 전용 컴포넌트(탭·폼·카드)
+│   ├── event-form.tsx            # 생성/수정 공용 폼 (RHF+Zod)
+│   ├── event-card.tsx            # 목록 카드
+│   ├── event-info-tab.tsx
+│   ├── event-announcements-tab.tsx
+│   ├── event-participants-tab.tsx
+│   ├── event-carpool-tab.tsx
+│   ├── event-settlement-tab.tsx
+│   └── joined-event-row.tsx      # 내 모임 목록 행
+├── main-nav.tsx / bottom-nav.tsx  # 상단/모바일 하단 네비게이션
+├── admin-nav-link.tsx / admin-user-role-toggle.tsx  # 관리자 전용 UI
+├── auth-button.tsx             # 로그인 상태에 따른 헤더 버튼
+├── login-form.tsx              # 로그인 폼 (Client Component)
+├── google-signin-button.tsx    # OAuth 로그인 버튼
+├── sign-up-form.tsx            # 회원가입 폼
+├── forgot-password-form.tsx    # 비밀번호 찾기 폼
+├── update-password-form.tsx    # 비밀번호 변경 폼
 ├── logout-button.tsx
-├── theme-switcher.tsx        # next-themes 다크모드 토글
-├── hero.tsx / next-logo.tsx / supabase-logo.tsx / deploy-button.tsx / env-var-warning.tsx  # 랜딩 페이지/스타터킷 잔여 UI
+├── theme-switcher.tsx          # next-themes 다크모드 토글
+├── next-logo.tsx / supabase-logo.tsx / env-var-warning.tsx  # 스타터킷 잔여 UI
 ```
 
-이 프로젝트는 컴포넌트를 `layout/`, `navigation/`, `sections/`, `providers/` 등으로 세분화하지 않습니다. `ui/`(shadcn 원자 컴포넌트)와 나머지(플랫 배치) 두 층만 존재합니다. 새 하위 폴더가 실제로 필요해지기 전까지는 만들지 마세요.
+이 프로젝트는 컴포넌트를 `layout/`, `navigation/`, `sections/`, `providers/` 등으로 세분화하지 않습니다. `ui/`(shadcn 원자 컴포넌트), 기능 단위 하위 폴더(`events/`처럼 탭이 여러 개인 기능만), 나머지(플랫 배치) 세 층만 존재합니다. 새 하위 폴더는 하나의 기능이 3개 이상의 전용 컴포넌트를 가질 때만 만드세요.
 
 ### lib/ - 유틸리티 및 Supabase 클라이언트
 
 ```
 lib/
 ├── utils.ts                 # cn() 헬퍼, hasEnvVars 체크
+├── auth/
+│   └── is-admin.ts           # is_admin() RPC 호출 헬퍼
+├── events/
+│   └── status.ts              # 모임 상태(예정/종료/취소) 판정 로직
+├── validations/                # 기능별 Zod 스키마 (RHF resolver + Server Action 재검증 공용)
+│   ├── event.ts
+│   ├── announcement.ts
+│   ├── carpool.ts
+│   └── settlement.ts
 └── supabase/
     ├── client.ts             # 브라우저 클라이언트
     ├── server.ts              # 서버(RSC/Server Action) 클라이언트
@@ -84,7 +122,11 @@ lib/
     └── database.types.ts       # Supabase CLI로 생성되는 타입 (git에 커밋됨, 직접 수정 금지 — 스키마 변경 시 재생성 후 커밋)
 ```
 
-새 유틸리티는 실제로 여러 곳에서 재사용될 때만 `lib/`에 파일을 추가하세요. `env.ts`, `types/`, `hooks/`, `schemas/`, `api/` 같은 하위 구조는 현재 존재하지 않으며, 필요해지기 전까지 미리 만들지 마세요.
+새 유틸리티는 실제로 여러 곳에서 재사용될 때만 `lib/`에 파일을 추가하세요. `env.ts`, `types/`, `hooks/`, `api/` 같은 하위 구조는 현재 존재하지 않으며, 필요해지기 전까지 미리 만들지 마세요.
+
+**폼 검증 패턴 (RHF + Zod)**: 기능별 입력 폼은 `lib/validations/<feature>.ts`에 Zod 스키마를 두고(`FormValues` 타입도 함께 export), 클라이언트 컴포넌트에서 `useForm({ resolver: zodResolver(schema) })` → `<Form><FormField>...<FormMessage /></Form>`(shadcn `components/ui/form.tsx`) 조합으로 렌더링, Server Action에서 `schema.safeParse(values)`로 다시 검증한 뒤 Supabase를 호출합니다. 체크박스로 여러 값을 고르는 필드(예: 결제자 다중 선택)는 shadcn 공식 문서의 "동일 `name`으로 `FormField`를 중첩 등록"하는 패턴을 쓰지 마세요 — 이 프로젝트의 zod 4 + `@hookform/resolvers` 5 조합에서 폼 전체의 에러 메시지 렌더링이 깨집니다. 대신 하나의 `FormField`(`render={({ field }) => ...}`) 안에서 여러 `Checkbox`를 매핑하고 `field.onChange`로 배열을 직접 갱신하세요(`components/events/event-settlement-tab.tsx` 참고).
+
+**Supabase 마이그레이션 컨벤션**: 스키마 변경은 `mcp__supabase__apply_migration`으로 원격에 적용한 뒤, 반드시 `mcp__supabase__list_migrations`로 실제 부여된 `version`을 확인하고 그 값을 파일명으로 써서 `supabase/migrations/<version>_<name>.sql`에 동일한 내용을 저장합니다(먼저 로컬 파일을 만들고 다른 타임스탬프를 붙이면 원격 이력과 어긋납니다). 이후 `mcp__supabase__generate_typescript_types`로 `database.types.ts`를 재생성하되, 파일 전체를 다시 쓰지 말고 변경된 테이블/함수 블록만 `Edit`으로 삽입하세요(전체 재작성은 과거 오탈자 버그를 낸 적이 있습니다). 마지막으로 `mcp__supabase__get_advisors`로 RLS 누락이나 의도치 않은 `anon`/`authenticated` 권한 노출이 없는지 확인합니다. 민감한 갱신(권한 승격, 동시성 제어가 필요한 확정/차감 로직 등)은 테이블 직접 권한을 최소화하고 `SECURITY DEFINER` 함수 하나만 공식 경로로 노출하는 패턴을 씁니다(`set_user_role`, `confirm_carpool_request`, `register_settlement_item` 참고).
 
 ## 🏷️ 파일 네이밍 컨벤션
 

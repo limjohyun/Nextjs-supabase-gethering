@@ -12,7 +12,7 @@ Required env vars (`.env.local`, not committed): `NEXT_PUBLIC_SUPABASE_URL`, `NE
 
 ## Architecture
 
-This is the standard Next.js + Supabase "with-supabase" starter kit (App Router), largely unmodified from upstream except for `Database`-typed Supabase clients. Source lives at the repo root — `app/`, `components/`, `lib/` are **not** under `src/`.
+This started as the standard Next.js + Supabase "with-supabase" starter kit (App Router) and has grown a real feature on top: `app/events/`, an event/gathering management app (모임 이벤트 관리 — event CRUD, announcements, participant approval, carpooling, cost settlement). The starter's auth/profile scaffolding (`app/auth/*`, `lib/supabase/*`, `proxy.ts`) is unchanged in shape. Source lives at the repo root — `app/`, `components/`, `lib/` are **not** under `src/`. See `docs/guides/project-structure.md` for the current route/component tree and the RHF+Zod form + Server Action + Supabase migration conventions used throughout `app/events/`.
 
 ### Supabase client boundary (three separate client factories)
 
@@ -34,15 +34,13 @@ The root-level `proxy.ts` is this Next.js version's replacement for the old `mid
 
 ### Database types
 
-`lib/supabase/database.types.ts` is generated output (Supabase CLI / `mcp__supabase__generate_typescript_types`) and is committed to the repo — regenerate and commit it after schema changes rather than hand-editing (CI does not regenerate it, so a stale file only means stale types, not a broken build). Currently defines `instruments` and `profiles` tables.
+`lib/supabase/database.types.ts` is generated output (Supabase CLI / `mcp__supabase__generate_typescript_types`) and is committed to the repo — regenerate after schema changes with targeted `Edit` insertions rather than a full-file rewrite (a prior full rewrite introduced a type bug) or hand-editing (CI does not regenerate it, so a stale file only means stale types, not a broken build). `supabase/migrations/` mirrors the applied remote migration history 1:1 — after `apply_migration`, always confirm the exact assigned `version` via `list_migrations` before writing the matching local filename, rather than guessing a timestamp.
 
 ### UI components
 
 shadcn/ui is configured via `components.json`. Add new shadcn components with `npx shadcn@latest add <name>` rather than hand-rolling primitives.
 
-`components/tutorial/*` and the `ConnectSupabaseSteps`/`SignUpUserSteps` UI on `/` are the starter kit's onboarding scaffolding (shown/hidden based on `hasEnvVars`) — treat them as template boilerplate, not app features to build on.
-
-`app/instruments/page.tsx` is the one non-boilerplate example page: an async Server Component wrapped in `Suspense`, fetching directly from Supabase (`supabase.from("instruments").select()`) with no client-side data layer.
+The `ConnectSupabaseSteps`/`SignUpUserSteps` UI on `/` (shown/hidden based on `hasEnvVars`) is the starter kit's onboarding scaffolding — treat it as template boilerplate, not an app feature to build on. `app/instruments/page.tsx` is a minimal starter-kit example page (async Server Component, direct `supabase.from("instruments").select()`, no client-side data layer) — `app/events/[id]/page.tsx` is the real reference for this project's actual data-fetching shape (`Promise.all` of several queries in one Server Component, passed down as props to `"use client"` tab components).
 
 ## `docs/guides/`
 
