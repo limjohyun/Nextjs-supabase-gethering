@@ -16,6 +16,7 @@ import {
   type MyParticipationData,
   type ParticipantData,
 } from "@/components/events/event-participants-tab";
+import { EventSettlementTab } from "@/components/events/event-settlement-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/server";
 
@@ -161,7 +162,7 @@ async function EventDetailContent({
           />
         </TabsContent>
         <TabsContent value="settlement">
-          <p className="text-muted-foreground text-sm">정산 준비 중</p>
+          <EventSettlementTab isHost={isHost} />
         </TabsContent>
       </Tabs>
     </div>
