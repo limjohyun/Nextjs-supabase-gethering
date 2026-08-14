@@ -205,7 +205,7 @@ export function EventForm({
                   min={1}
                   name={field.name}
                   ref={field.ref}
-                  value={field.value}
+                  value={Number.isNaN(field.value) ? "" : field.value}
                   onBlur={field.onBlur}
                   onChange={(e) => field.onChange(e.target.valueAsNumber)}
                 />

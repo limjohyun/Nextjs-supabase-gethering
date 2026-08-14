@@ -1,5 +1,8 @@
+"use client";
+
 import { ImageIcon, Users } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -38,19 +41,21 @@ export function EventCard({ event }: { event: EventCardData }) {
     event.eventDatetime,
     event.status,
   );
+  const [imgFailed, setImgFailed] = useState(false);
 
   return (
     <Link href={`/events/${event.id}`}>
-      <Card className="overflow-hidden transition-colors hover:bg-accent">
+      <Card className="hover:bg-accent overflow-hidden transition-colors">
         {/* 커버 이미지 영역 - Card 상단 모서리(rounded-xl)에 맞춰 위쪽만 둥글게 처리 */}
-        {event.coverImageUrl ? (
+        {event.coverImageUrl && !imgFailed ? (
           <img
             src={event.coverImageUrl}
             alt={event.title}
             className="h-32 w-full rounded-t-xl object-cover"
+            onError={() => setImgFailed(true)}
           />
         ) : (
-          <div className="flex h-32 w-full items-center justify-center rounded-t-xl bg-muted text-muted-foreground">
+          <div className="bg-muted text-muted-foreground flex h-32 w-full items-center justify-center rounded-t-xl">
             <ImageIcon className="size-6" aria-hidden="true" />
           </div>
         )}
@@ -68,7 +73,7 @@ export function EventCard({ event }: { event: EventCardData }) {
           <CardDescription>{event.location}</CardDescription>
         </CardHeader>
 
-        <CardContent className="flex flex-col gap-2 text-sm text-muted-foreground">
+        <CardContent className="text-muted-foreground flex flex-col gap-2 text-sm">
           <span>{new Date(event.eventDatetime).toLocaleString("ko-KR")}</span>
 
           <div className="flex items-center justify-between gap-2">

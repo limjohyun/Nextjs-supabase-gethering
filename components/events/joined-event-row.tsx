@@ -44,6 +44,7 @@ export function JoinedEventRow({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [imgFailed, setImgFailed] = useState(false);
 
   function handleCancel() {
     setError(null);
@@ -61,11 +62,12 @@ export function JoinedEventRow({
     <li className="flex flex-col gap-1">
       <div className="flex items-center justify-between rounded-md border p-3">
         <Link href={`/events/${eventId}`} className="flex items-center gap-2">
-          {coverImageUrl ? (
+          {coverImageUrl && !imgFailed ? (
             <img
               src={coverImageUrl}
               alt={title}
               className="h-10 w-10 shrink-0 rounded-md object-cover"
+              onError={() => setImgFailed(true)}
             />
           ) : (
             <div className="bg-muted text-muted-foreground flex h-10 w-10 shrink-0 items-center justify-center rounded-md">
