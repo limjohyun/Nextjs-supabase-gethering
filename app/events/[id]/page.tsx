@@ -13,6 +13,7 @@ import {
 import { EventInfoTab } from "@/components/events/event-info-tab";
 import {
   EventParticipantsTab,
+  type ApprovedParticipantData,
   type MyParticipationData,
   type ParticipantData,
 } from "@/components/events/event-participants-tab";
@@ -65,7 +66,9 @@ async function EventDetailContent({
       }),
     supabase
       .from("event_participants")
-      .select("user_id, profiles!event_participants_user_id_fkey(full_name)")
+      .select(
+        "user_id, profiles!event_participants_user_id_fkey(full_name, avatar_url)",
+      )
       .eq("event_id", id)
       .eq("status", "approved")
       .order("applied_at", { ascending: true }),
@@ -129,6 +132,14 @@ async function EventDetailContent({
     }
   }
   const settlementItems = Array.from(settlementItemsMap.values());
+
+  const approvedParticipants: ApprovedParticipantData[] = (
+    approvedParticipantsData ?? []
+  ).map((participant) => ({
+    userId: participant.user_id,
+    name: participant.profiles?.full_name ?? "알 수 없음",
+    avatarUrl: participant.profiles?.avatar_url ?? null,
+  }));
 
   const sharesByUserId = new Map(
     (settlementSharesData ?? []).map((share) => [share.user_id, share]),
@@ -210,6 +221,7 @@ async function EventDetailContent({
             isHost={isHost}
             participants={participants}
             myParticipation={myParticipation}
+            approvedParticipants={approvedParticipants}
           />
         </TabsContent>
         <TabsContent value="carpool">

@@ -9,6 +9,7 @@ import {
   cancelParticipation,
   rejectParticipant,
 } from "@/app/events/[id]/participants-actions";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -23,6 +24,13 @@ export type ParticipantData = {
 export type MyParticipationData = {
   id: string;
   status: ParticipantStatus;
+};
+
+/** 승인된 참여자 조회용 데이터. userId는 향후 프로필 페이지 연결을 위해 포함한다 */
+export type ApprovedParticipantData = {
+  userId: string;
+  name: string;
+  avatarUrl: string | null;
 };
 
 const STATUS_LABEL: Record<ParticipantStatus, string> = {
@@ -47,11 +55,13 @@ export function EventParticipantsTab({
   isHost,
   participants,
   myParticipation,
+  approvedParticipants,
 }: {
   eventId: string;
   isHost: boolean;
   participants: ParticipantData[];
   myParticipation: MyParticipationData | null;
+  approvedParticipants: ApprovedParticipantData[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -107,7 +117,38 @@ export function EventParticipantsTab({
 
   return (
     <div className="flex flex-col gap-6">
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p className="text-destructive text-sm">{error}</p>}
+
+      <div className="flex flex-col gap-3">
+        <h3 className="text-muted-foreground text-sm font-semibold">
+          참여자 ({approvedParticipants.length}명)
+        </h3>
+        {approvedParticipants.length === 0 ? (
+          <p className="text-muted-foreground text-sm">
+            아직 승인된 참여자가 없습니다.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {approvedParticipants.map((participant) => (
+              <li
+                key={participant.userId}
+                className="flex items-center gap-2 rounded-md border p-3"
+              >
+                <Avatar className="h-6 w-6">
+                  {participant.avatarUrl && (
+                    <AvatarImage
+                      src={participant.avatarUrl}
+                      alt={participant.name}
+                    />
+                  )}
+                  <AvatarFallback>{participant.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium">{participant.name}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {!isHost && (
         <div className="flex items-center gap-3">
@@ -139,11 +180,11 @@ export function EventParticipantsTab({
 
       {isHost && (
         <div className="flex flex-col gap-3">
-          <h3 className="text-sm font-semibold text-muted-foreground">
-            참여자 목록
+          <h3 className="text-muted-foreground text-sm font-semibold">
+            참여 신청 관리
           </h3>
           {participants.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               아직 신청한 참여자가 없습니다.
             </p>
           ) : (
