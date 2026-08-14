@@ -363,9 +363,9 @@ Phase 2 완료 후, Gather 앱 참고 이미지를 바탕으로 지금까지 만
 
 #### 핵심 기능 — 기능 2: 모바일 레이아웃 브레이크포인트 상향(640px → 1024px)
 
-- [ ] 네비게이션(`main-nav.tsx`/`bottom-nav.tsx`) 레이아웃 전환용 `sm:` → `lg:` 치환 — `MUST`
-- [ ] 페이지 그리드/탭 터치타겟(`app/page.tsx`, `app/events/page.tsx`, `app/my/page.tsx`, `app/admin/page.tsx`, `app/profile/page.tsx`, `app/events/[id]/page.tsx`) `sm:` → `lg:` 치환 — `MUST`
-- [ ] 레이아웃 하단 여백(4개 `layout.tsx`) `sm:pb-5` → `lg:pb-5` 치환 — `MUST`
+- [x] 네비게이션(`main-nav.tsx`/`bottom-nav.tsx`) 레이아웃 전환용 `sm:` → `lg:` 치환 — `MUST`
+- [x] 페이지 그리드/탭 터치타겟(`app/page.tsx`, `app/events/page.tsx`, `app/my/page.tsx`, `app/admin/page.tsx`, `app/profile/page.tsx`, `app/events/[id]/page.tsx`) `sm:` → `lg:` 치환 — `MUST`
+- [x] 레이아웃 하단 여백(4개 `layout.tsx`) `sm:pb-5` → `lg:pb-5` 치환 — `MUST`
 
 1024px는 Tailwind v4 기본 브레이크포인트 `lg`와 일치해 커스텀 브레이크포인트 정의가 불필요함을 확인. 버튼 size variant, shadcn dialog 반응형, 랜딩 히어로 텍스트 스케일링처럼 레이아웃 모드 전환과 무관한 `sm:`는 변경하지 않는다.
 

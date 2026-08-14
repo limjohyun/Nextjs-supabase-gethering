@@ -67,7 +67,7 @@ async function ProfileContent() {
       </Card>
 
       {/* 통계 카드 2개: 만든 모임 / 참여한 모임 */}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-muted-foreground text-sm font-medium">

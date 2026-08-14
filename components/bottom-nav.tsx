@@ -39,7 +39,7 @@ const NAV_ITEMS = [
 
 /**
  * 모바일 화면 전용 하단 고정 탭바
- * 현재 경로에 해당하는 탭을 강조 표시하고, sm 이상 화면에서는 숨김 처리한다
+ * 현재 경로에 해당하는 탭을 강조 표시하고, lg 이상 화면에서는 숨김 처리한다
  */
 export function BottomNav() {
   const pathname = usePathname();
@@ -47,7 +47,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="모바일 하단 내비게이션"
-      className="fixed bottom-0 left-0 right-0 z-50 flex h-16 border-t bg-background sm:hidden"
+      className="bg-background fixed right-0 bottom-0 left-0 z-50 flex h-16 border-t lg:hidden"
     >
       {NAV_ITEMS.map(({ href, label, icon: Icon, isActive }) => {
         const active = isActive(pathname);
@@ -61,7 +61,7 @@ export function BottomNav() {
             // 하단 탭바 전체 높이(h-16)와 균등 너비(flex-1)를 채우게 한다
             className={cn(
               "flex flex-1 flex-col items-center justify-center gap-1 text-xs",
-              active ? "font-medium text-foreground" : "text-muted-foreground",
+              active ? "text-foreground font-medium" : "text-muted-foreground",
             )}
           >
             <Icon className="h-5 w-5" aria-hidden="true" />

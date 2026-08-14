@@ -89,7 +89,7 @@ async function MyEventsContent() {
             아직 주최한 모임이 없습니다.
           </p>
         ) : (
-          <ul className="grid gap-4 sm:grid-cols-2">
+          <ul className="grid gap-4 lg:grid-cols-2">
             {hostedEventCards.map((event) => (
               <li key={event.id}>
                 <EventCard event={event} />

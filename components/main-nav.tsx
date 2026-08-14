@@ -7,7 +7,7 @@ import { hasEnvVars } from "@/lib/utils";
 
 export function MainNav() {
   return (
-    <nav className="border-b-foreground/10 hidden h-16 w-full justify-center border-b sm:flex">
+    <nav className="border-b-foreground/10 hidden h-16 w-full justify-center border-b lg:flex">
       <div className="flex w-full max-w-5xl items-center justify-between p-3 px-5 text-sm">
         <div className="flex items-center gap-5 font-semibold">
           <Link href="/events">모임 목록</Link>

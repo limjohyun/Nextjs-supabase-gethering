@@ -11,7 +11,7 @@ export default function EventsLayout({
   return (
     <div className="flex min-h-screen flex-col items-center">
       <MainNav />
-      <div className="flex w-full max-w-5xl flex-1 flex-col gap-8 p-5 pb-20 sm:pb-5">
+      <div className="flex w-full max-w-5xl flex-1 flex-col gap-8 p-5 pb-20 lg:pb-5">
         {children}
       </div>
       <Suspense fallback={null}>

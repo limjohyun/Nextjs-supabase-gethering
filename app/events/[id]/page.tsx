@@ -177,7 +177,7 @@ async function EventDetailContent({
       <h1 className="text-2xl font-bold">{event.title}</h1>
       <Tabs defaultValue="info">
         {/* 모바일에서 탭 터치 타겟이 WCAG 최소 권장 크기(44px)에 가깝도록 h-11, sm 이상은 기존 h-9 유지 */}
-        <TabsList className="!h-11 sm:!h-9">
+        <TabsList className="!h-11 lg:!h-9">
           <TabsTrigger value="info">기본정보</TabsTrigger>
           <TabsTrigger value="announcements">공지</TabsTrigger>
           <TabsTrigger value="participants">참여자</TabsTrigger>

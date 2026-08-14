@@ -94,8 +94,8 @@ async function AdminDashboardContent() {
       <h1 className="text-2xl font-bold">관리자 대시보드</h1>
 
       <Tabs defaultValue="events">
-        {/* 모바일에서 탭 터치 타겟이 WCAG 최소 권장 크기(44px)에 가깝도록 h-11, sm 이상은 기존 h-9 유지 */}
-        <TabsList className="!h-11 sm:!h-9">
+        {/* 모바일에서 탭 터치 타겟이 WCAG 최소 권장 크기(44px)에 가깝도록 h-11, lg 이상은 기존 h-9 유지 */}
+        <TabsList className="!h-11 lg:!h-9">
           <TabsTrigger value="events">전체 이벤트</TabsTrigger>
           <TabsTrigger value="users">전체 가입자</TabsTrigger>
           <TabsTrigger value="stats">통계</TabsTrigger>
@@ -107,7 +107,7 @@ async function AdminDashboardContent() {
               등록된 모임이 없습니다.
             </p>
           ) : (
-            <ul className="grid gap-4 sm:grid-cols-2">
+            <ul className="grid gap-4 lg:grid-cols-2">
               {eventCards.map((event) => (
                 <li key={event.id}>
                   <EventCard event={event} />
@@ -184,7 +184,7 @@ async function AdminDashboardContent() {
         </TabsContent>
 
         <TabsContent value="stats" className="pt-2">
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 lg:grid-cols-3">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-muted-foreground text-sm font-medium">

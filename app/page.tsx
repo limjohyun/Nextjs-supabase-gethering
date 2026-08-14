@@ -58,8 +58,8 @@ async function LandingCta() {
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center">
-      <div className="flex w-full flex-1 flex-col items-center gap-12 pb-20 sm:gap-20 sm:pb-0">
-        <nav className="border-b-foreground/10 hidden h-16 w-full justify-center border-b sm:flex">
+      <div className="flex w-full flex-1 flex-col items-center gap-12 pb-20 lg:gap-20 lg:pb-0">
+        <nav className="border-b-foreground/10 hidden h-16 w-full justify-center border-b lg:flex">
           <div className="flex w-full max-w-5xl items-center justify-between p-3 px-5 text-sm">
             <Link href="/" className="font-semibold">
               모임 이벤트 관리
@@ -92,7 +92,7 @@ export default function Home() {
           </Suspense>
         </div>
 
-        <div className="grid w-full max-w-5xl gap-4 px-5 sm:grid-cols-3">
+        <div className="grid w-full max-w-5xl gap-4 px-5 lg:grid-cols-3">
           {FEATURES.map((feature) => (
             <Card key={feature.title}>
               <CardHeader className="gap-2">
