@@ -1,8 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { ImageIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -45,6 +46,8 @@ export function EventForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
+  const [debouncedCoverUrl, setDebouncedCoverUrl] = useState("");
+  const [coverUrlPreviewFailed, setCoverUrlPreviewFailed] = useState(false);
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
@@ -58,6 +61,19 @@ export function EventForm({
       ...defaultValues,
     },
   });
+
+  const coverImageUrl = useWatch({
+    control: form.control,
+    name: "coverImageUrl",
+  });
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedCoverUrl(coverImageUrl ?? "");
+      setCoverUrlPreviewFailed(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [coverImageUrl]);
 
   async function handleCoverImageFileChange(
     e: React.ChangeEvent<HTMLInputElement>,
@@ -227,6 +243,28 @@ export function EventForm({
             </FormItem>
           )}
         />
+        {debouncedCoverUrl && (
+          <div className="flex items-center gap-2">
+            {!coverUrlPreviewFailed ? (
+              <img
+                src={debouncedCoverUrl}
+                alt="커버 이미지 미리보기"
+                className="h-16 w-16 rounded-md object-cover"
+                onError={() => setCoverUrlPreviewFailed(true)}
+              />
+            ) : (
+              <div className="bg-muted text-muted-foreground flex h-16 w-16 items-center justify-center rounded-md">
+                <ImageIcon className="size-5" aria-hidden="true" />
+              </div>
+            )}
+            {coverUrlPreviewFailed && (
+              <p className="text-destructive text-xs">
+                이 URL은 이미지로 표시할 수 없습니다. 실제 이미지 파일 링크인지
+                확인하거나 아래 파일 업로드를 이용해주세요.
+              </p>
+            )}
+          </div>
+        )}
         <div className="grid gap-2">
           <Label htmlFor="cover-image-file">또는 이미지 파일 업로드</Label>
           <Input
