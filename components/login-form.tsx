@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { GoogleSignInButton } from "@/components/google-signin-button";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export function LoginForm({
@@ -32,6 +32,12 @@ export function LoginForm({
   const [isResending, setIsResending] = useState(false);
   const [resendSent, setResendSent] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawNext = searchParams.get("next");
+  const next =
+    rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")
+      ? rawNext
+      : "/";
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +62,7 @@ export function LoginForm({
         }
         throw error;
       }
-      router.push("/");
+      router.push(next);
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "오류가 발생했습니다.");
     } finally {
@@ -145,11 +151,15 @@ export function LoginForm({
                 </span>
               </span>
             </div>
-            <GoogleSignInButton />
+            <GoogleSignInButton next={next} />
             <div className="mt-4 text-center text-sm">
               계정이 없으신가요?{" "}
               <Link
-                href="/auth/sign-up"
+                href={
+                  next !== "/"
+                    ? `/auth/sign-up?next=${encodeURIComponent(next)}`
+                    : "/auth/sign-up"
+                }
                 className="underline underline-offset-4"
               >
                 회원가입

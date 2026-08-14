@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { GoogleSignInButton } from "@/components/google-signin-button";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export function SignUpForm({
@@ -31,6 +31,12 @@ export function SignUpForm({
   const [isDuplicateEmail, setIsDuplicateEmail] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawNext = searchParams.get("next");
+  const next =
+    rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")
+      ? rawNext
+      : "/";
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +56,7 @@ export function SignUpForm({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(next)}`,
         },
       });
       if (error) {
@@ -73,7 +79,11 @@ export function SignUpForm({
         setError("이미 가입된 이메일입니다. 로그인해주세요.");
         return;
       }
-      router.push("/auth/sign-up-success");
+      if (data.session) {
+        router.push(next);
+      } else {
+        router.push("/auth/sign-up-success");
+      }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "오류가 발생했습니다.");
     } finally {
@@ -154,10 +164,17 @@ export function SignUpForm({
                 </span>
               </span>
             </div>
-            <GoogleSignInButton />
+            <GoogleSignInButton next={next} />
             <div className="mt-4 text-center text-sm">
               이미 계정이 있으신가요?{" "}
-              <Link href="/auth/login" className="underline underline-offset-4">
+              <Link
+                href={
+                  next !== "/"
+                    ? `/auth/login?next=${encodeURIComponent(next)}`
+                    : "/auth/login"
+                }
+                className="underline underline-offset-4"
+              >
                 로그인
               </Link>
             </div>

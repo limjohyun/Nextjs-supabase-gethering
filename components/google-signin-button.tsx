@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
 /** 구글 OAuth 로그인 버튼 (login/sign-up 폼 공용) */
-export function GoogleSignInButton() {
+export function GoogleSignInButton({ next }: { next?: string }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,10 +15,14 @@ export function GoogleSignInButton() {
     setError(null);
 
     try {
+      const redirectTo =
+        next && next !== "/"
+          ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`
+          : `${window.location.origin}/auth/callback`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo,
           // 매번 계정 선택 화면을 띄워, 브라우저에 남아있는 구글 세션으로
           // 자동 재인증되지 않고 명시적으로 계정을 고르도록 강제한다.
           queryParams: {
