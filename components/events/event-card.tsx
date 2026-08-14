@@ -51,7 +51,7 @@ export function EventCard({ event }: { event: EventCardData }) {
           <img
             src={event.coverImageUrl}
             alt={event.title}
-            className="h-32 w-full rounded-t-xl object-cover"
+            className="bg-muted h-32 w-full rounded-t-xl object-contain"
             onError={() => setImgFailed(true)}
           />
         ) : (
