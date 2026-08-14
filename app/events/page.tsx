@@ -11,6 +11,7 @@ async function EventsList() {
     .select(
       "id, title, category, event_datetime, location, capacity, status, cover_image_url, profiles!events_host_id_fkey(full_name, avatar_url)",
     )
+    .neq("status", "cancelled")
     .order("event_datetime", { ascending: true });
 
   const eventIds = (data ?? []).map((event) => event.id);
@@ -47,7 +48,7 @@ async function EventsList() {
 
   if (events.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="text-muted-foreground text-sm">
         아직 등록된 모임이 없습니다.
       </p>
     );
@@ -78,7 +79,7 @@ export default function EventsPage() {
       </div>
       <Suspense
         fallback={
-          <p className="text-sm text-muted-foreground">불러오는 중...</p>
+          <p className="text-muted-foreground text-sm">불러오는 중...</p>
         }
       >
         <EventsList />

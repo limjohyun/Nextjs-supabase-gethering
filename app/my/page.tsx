@@ -23,11 +23,12 @@ async function MyEventsContent() {
           "id, title, category, event_datetime, location, capacity, status, cover_image_url, profiles!events_host_id_fkey(full_name, avatar_url)",
         )
         .eq("host_id", userId)
+        .neq("status", "cancelled")
         .order("event_datetime", { ascending: true }),
       supabase
         .from("event_participants")
         .select(
-          "id, status, events!event_participants_event_id_fkey(id, title, cover_image_url)",
+          "id, status, events!event_participants_event_id_fkey(id, title, cover_image_url, status)",
         )
         .eq("user_id", userId)
         .order("applied_at", { ascending: true }),
@@ -68,7 +69,7 @@ async function MyEventsContent() {
   );
 
   const joinedEvents = (joinedParticipations ?? [])
-    .filter((p) => p.events !== null)
+    .filter((p) => p.events !== null && p.events.status !== "cancelled")
     .map((p) => ({
       participationId: p.id,
       status: p.status as "pending" | "approved" | "rejected" | "cancelled",
