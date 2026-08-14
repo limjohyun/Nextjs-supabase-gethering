@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DeleteAccountButton } from "@/components/delete-account-button";
 import { LogoutButton } from "@/components/logout-button";
 import { createClient } from "@/lib/supabase/server";
 
@@ -137,7 +138,10 @@ async function ProfileContent() {
         </Card>
       )}
 
-      <LogoutButton />
+      <div className="flex gap-2">
+        <LogoutButton />
+        <DeleteAccountButton />
+      </div>
     </div>
   );
 }

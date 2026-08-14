@@ -394,6 +394,37 @@ Phase 2 완료 후, Gather 앱 참고 이미지를 바탕으로 지금까지 만
 
 ---
 
+### Phase 10: 회원 탈퇴(계정 삭제) 기능 추가
+
+**목표**: 프로필 페이지에 회원 탈퇴 기능이 없다는 신고와, "Supabase 대시보드에서 `profiles` 테이블 행을 삭제해도 로그인이 된다"는 신고 두 건을 동시에 해결한다. 조사 결과 후자는 버그가 아니라 `public.profiles.id → auth.users(id) on delete cascade`(자식→부모 방향)라는 PostgreSQL FK 의미론과, Supabase Auth가 `public.profiles`가 아닌 `auth.users`만으로 인증을 검증하는 아키텍처상 당연한 동작임을 실제 DB 트리거(`pg_trigger`) 조회와 공식 문서(`search_docs`)로 확정했다. 즉 회원 탈퇴 기능(계정 자체 삭제)을 올바르게 구현하는 것이 두 문제 모두의 해결책이다. shrimp-task-manager로 5개 원자적 태스크(`analyze_task`→`reflect_task`→`split_tasks`)로 분해해 순차 실행한다.
+
+#### 핵심 기능
+
+- [x] `SUPABASE_SERVICE_ROLE_KEY` 환경변수 확인(값은 절대 읽지 않고 존재 여부만 확인, 없으면 사용자가 `.env.local`에 직접 추가) — `MUST`
+- [x] 서버 전용 admin 클라이언트 신설(`lib/supabase/admin.ts`, `@supabase/supabase-js`의 `createClient`를 service_role 키로 초기화, 클라이언트 컴포넌트에서 import 금지) — `MUST`
+- [x] 회원 탈퇴 Server Action(`app/profile/actions.ts`의 `deleteAccount()`) — 현재 세션 확인 → `admin.auth.admin.deleteUser(userId)` 호출 → 성공 시 `signOut()` + `/auth/login` 리다이렉트 — `MUST`
+- [x] 회원 탈퇴 확인 UI(`components/delete-account-button.tsx`) — `event-info-tab.tsx`의 기존 "모임 취소" Dialog 패턴 재사용, "본인이 만든 모임과 참여 내역이 모두 함께 삭제됨" 경고 문구 포함, `app/profile/page.tsx`의 `<LogoutButton />` 아래 배치 — `MUST`
+- [x] `auth.users` 삭제 시 `profiles`/`events`/`event_participants`/`carpools`/`settlements` 전체 체인이 cascade 삭제되는지 SQL 트랜잭션(rollback) 시뮬레이션으로 검증 — `MUST`
+
+새 마이그레이션이나 `database.types.ts` 변경은 필요 없다(기존 `on delete cascade` FK 체인이 이미 전 테이블에 존재함을 사전 조사로 확인).
+
+#### 완료 기준(체크리스트)
+
+- [x] `npm run lint`, `npm run build`가 매 태스크마다 통과
+- [x] SQL 트랜잭션 rollback 시뮬레이션으로 cascade 삭제 체인 확인(실제 데이터 손상 없음) — 실제 admin 계정(호스트 이벤트 3개)으로 시뮬레이션해 profiles/events가 모두 cascade 삭제됨을 확인 후 rollback으로 완전 복원 재확인
+- [x] 실제 브라우저(claude-in-chrome)로 탈퇴 확인 다이얼로그의 열기/경고 문구/취소 동작 확인(실제 확정 클릭은 사용자 승인 없이 수행하지 않음)
+- [x] `mcp__supabase__get_advisors` 점검에서 새 경고 없음(기존 무관 경고만 존재)
+
+**✅ 완료** — shrimp-task-manager로 5개 원자적 태스크로 분해해 순차 실행(`f3d38a45`~`6116e432`), 각 태스크를 `verify_task`로 검증. 커밋 1건으로 처리. 검증 과정에서 실제 DB 상태가 사용자가 신고한 "문제 2"를 그대로 재현하고 있음을 추가로 발견했다 — `ljohyun7@naver.com` 계정이 `auth.users`엔 존재하지만 `public.profiles`는 이미 삭제된 상태였고, 이 계정을 참조하던 `event_participants`/`carpools`/`settlements` 등도 이미 `profiles`의 cascade로 함께 정리되어 있었다. 이는 근본 원인 분석(스키마/트리거 조사)이 실제 데이터로도 뒷받침됨을 보여준다. `SUPABASE_SERVICE_ROLE_KEY`는 구현 시점에 `.env.local`에 아직 없었음(값은 확인하지 않음) — 실제 배포/실사용 전 사용자가 직접 Supabase 대시보드에서 복사해 추가해야 한다.
+
+#### 위험 요소
+
+- **Playwright/실브라우저로 문제 2를 직접 재현 불가**: 실제 로그인 시도(비밀번호 입력)는 이 세션의 하드 안전 규칙상 수행할 수 없다. 대신 스키마·트리거·공식 문서 조사로 근본 원인을 결정적으로 규명했으며, 탈퇴 기능 구현 후 "탈퇴된 계정으로 재로그인이 실제로 실패하는지"의 최종 실사용 확인은 사용자가 직접 해야 한다.
+- **`service_role` 키 노출 위험**: RLS를 완전히 우회하는 최고 권한 키이므로 `lib/supabase/admin.ts`는 반드시 Server Action에서만 import해야 하며, 클라이언트 컴포넌트나 브라우저 번들에 포함되지 않도록 각별히 주의한다.
+- **다른 기기의 기존 세션**: Supabase 문서에 따르면 `auth.users` 삭제 후에도 이미 발급된 JWT는 만료 전까지 유효할 수 있다 — 탈퇴를 시작한 현재 브라우저는 `signOut()`으로 즉시 정리되지만, 다른 기기에 남아있던 이전 세션까지 즉시 무효화하는 것은 이번 스코프 밖이다.
+
+---
+
 ## 주요 마일스톤
 
 | 마일스톤                                       | 완료 기준                                                                             | 핵심 산출물                                                                        | 상태    |
@@ -409,6 +440,7 @@ Phase 2 완료 후, Gather 앱 참고 이미지를 바탕으로 지금까지 만
 | M7. 운영 개선사항 완료                         | Phase 7 완료 기준 충족                                                                | 관리자 부트스트랩, 회원가입/로그인 에러 처리 보강, 모임 커버 이미지 Storage 업로드 | ✅ 완료 |
 | M8. 버그 수정·이미지 UX 개선 완료              | Phase 8 완료 기준 충족                                                                | NaN 에러 수정, 취소된 모임 숨김, 커버 이미지 URL 실시간 검증, object-contain 전환  | ✅ 완료 |
 | M9. 초대 링크·모바일 레이아웃·참여자 목록 완료 | Phase 9 완료 기준 충족                                                                | 초대 링크 `next` 딥링크, 브레이크포인트 1024px 상향, 승인된 참여자 목록 UI         | ✅ 완료 |
+| M10. 회원 탈퇴 기능 완료                       | Phase 10 완료 기준 충족                                                               | service_role admin 클라이언트, `deleteAccount` Server Action, 탈퇴 확인 UI         | ✅ 완료 |
 
 ## 크로스컷팅 관심사(Cross-cutting Concerns)
 
