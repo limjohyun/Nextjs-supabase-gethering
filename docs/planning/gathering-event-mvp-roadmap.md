@@ -415,12 +415,13 @@ Phase 2 완료 후, Gather 앱 참고 이미지를 바탕으로 지금까지 만
 - [x] 실제 브라우저(claude-in-chrome)로 탈퇴 확인 다이얼로그의 열기/경고 문구/취소 동작 확인(실제 확정 클릭은 사용자 승인 없이 수행하지 않음)
 - [x] `mcp__supabase__get_advisors` 점검에서 새 경고 없음(기존 무관 경고만 존재)
 
-**✅ 완료** — shrimp-task-manager로 5개 원자적 태스크로 분해해 순차 실행(`f3d38a45`~`6116e432`), 각 태스크를 `verify_task`로 검증. 커밋 1건으로 처리. 검증 과정에서 실제 DB 상태가 사용자가 신고한 "문제 2"를 그대로 재현하고 있음을 추가로 발견했다 — `ljohyun7@naver.com` 계정이 `auth.users`엔 존재하지만 `public.profiles`는 이미 삭제된 상태였고, 이 계정을 참조하던 `event_participants`/`carpools`/`settlements` 등도 이미 `profiles`의 cascade로 함께 정리되어 있었다. 이는 근본 원인 분석(스키마/트리거 조사)이 실제 데이터로도 뒷받침됨을 보여준다. `SUPABASE_SERVICE_ROLE_KEY`는 구현 시점에 `.env.local`에 아직 없었음(값은 확인하지 않음) — 실제 배포/실사용 전 사용자가 직접 Supabase 대시보드에서 복사해 추가해야 한다.
+**✅ 완료** — shrimp-task-manager로 5개 원자적 태스크로 분해해 순차 실행(`f3d38a45`~`6116e432`), 각 태스크를 `verify_task`로 검증. 커밋 1건(`408ca07`)으로 처리. 검증 과정에서 실제 DB 상태가 사용자가 신고한 "문제 2"를 그대로 재현하고 있음을 추가로 발견했다 — `ljohyun7@naver.com` 계정이 `auth.users`엔 존재하지만 `public.profiles`는 이미 삭제된 상태였고, 이 계정을 참조하던 `event_participants`/`carpools`/`settlements` 등도 이미 `profiles`의 cascade로 함께 정리되어 있었다. 이는 근본 원인 분석(스키마/트리거 조사)이 실제 데이터로도 뒷받침됨을 보여준다.
+
+**후속 실사용 검증(2026-08-14)** — `SUPABASE_SERVICE_ROLE_KEY`를 사용자가 `.env.local`에 추가한 뒤(최초 `NEXT_PUBLIC_` 접두사로 잘못 추가했던 것을 즉시 정정, `docs/issue.md` #4 참고), 실제 로그인된 고아 계정(`ljohyun7@naver.com`)으로 "회원 탈퇴 → 탈퇴 확정" 버튼을 실제로 클릭해 end-to-end 검증을 완료했다. `/auth/login`으로 정상 리다이렉트됐고, SQL로 `auth.users`/`profiles`/`sessions` 모두 0건임을 확인해 완전 삭제를 실증했다. 이후 같은 이메일로 재가입 → 이메일 확인 → 재로그인까지 사용자가 직접 수행해 전체 회원가입/탈퇴 사이클이 실사용 환경에서 정상 동작함을 최종 확인했다(이메일 확인 링크를 중복 클릭해 "만료됨" 에러가 잠깐 떴으나, Auth 로그 조회로 1회용 토큰의 정상 동작이며 첫 클릭에서 이미 확인이 성공했음을 규명 — `docs/issue.md` #5 참고).
 
 #### 위험 요소
 
-- **Playwright/실브라우저로 문제 2를 직접 재현 불가**: 실제 로그인 시도(비밀번호 입력)는 이 세션의 하드 안전 규칙상 수행할 수 없다. 대신 스키마·트리거·공식 문서 조사로 근본 원인을 결정적으로 규명했으며, 탈퇴 기능 구현 후 "탈퇴된 계정으로 재로그인이 실제로 실패하는지"의 최종 실사용 확인은 사용자가 직접 해야 한다.
-- **`service_role` 키 노출 위험**: RLS를 완전히 우회하는 최고 권한 키이므로 `lib/supabase/admin.ts`는 반드시 Server Action에서만 import해야 하며, 클라이언트 컴포넌트나 브라우저 번들에 포함되지 않도록 각별히 주의한다.
+- **`service_role` 키 노출 위험**: RLS를 완전히 우회하는 최고 권한 키이므로 `lib/supabase/admin.ts`는 반드시 Server Action에서만 import해야 하며, 클라이언트 컴포넌트나 브라우저 번들에 포함되지 않도록 각별히 주의한다. 실제로 `.env.local`에 `NEXT_PUBLIC_` 접두사로 잘못 추가됐던 near-miss가 있었다(즉시 발견해 정정, 실제 노출은 없었음).
 - **다른 기기의 기존 세션**: Supabase 문서에 따르면 `auth.users` 삭제 후에도 이미 발급된 JWT는 만료 전까지 유효할 수 있다 — 탈퇴를 시작한 현재 브라우저는 `signOut()`으로 즉시 정리되지만, 다른 기기에 남아있던 이전 세션까지 즉시 무효화하는 것은 이번 스코프 밖이다.
 
 ---
