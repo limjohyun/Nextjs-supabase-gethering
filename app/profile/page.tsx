@@ -51,19 +51,26 @@ async function ProfileContent() {
 
       {/* 아바타 + 이름 + 이메일 카드 */}
       <Card>
-        <CardContent className="flex items-center gap-4 pt-6">
-          <Avatar className="h-16 w-16">
-            {profile?.avatar_url && (
-              <AvatarImage src={profile.avatar_url} alt={name} />
-            )}
-            <AvatarFallback className="text-lg">
-              {name.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col">
-            <span className="text-lg font-bold">{name}</span>
-            <span className="text-muted-foreground text-sm">{user.email}</span>
+        <CardContent className="flex items-center justify-between gap-4 pt-6">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              {profile?.avatar_url && (
+                <AvatarImage src={profile.avatar_url} alt={name} />
+              )}
+              <AvatarFallback className="text-lg">
+                {name.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <span className="text-lg font-bold">{name}</span>
+              <span className="text-muted-foreground text-sm">
+                {user.email}
+              </span>
+            </div>
           </div>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/profile/edit">편집</Link>
+          </Button>
         </CardContent>
       </Card>
 

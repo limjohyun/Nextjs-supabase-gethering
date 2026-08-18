@@ -426,6 +426,53 @@ Phase 2 완료 후, Gather 앱 참고 이미지를 바탕으로 지금까지 만
 
 ---
 
+### Phase 11: 닉네임 설정 플로우 · 프로필 편집 기능 추가 (실사용 신규 요청)
+
+**목표**: `profiles.username`이 컬럼만 있고 어디서도 설정/편집되지 않는 죽은 필드인 문제를 해결한다. (1) 회원가입(이메일/Google OAuth) 완료 직후 닉네임을 반드시 설정하게 하고, OAuth 가입자는 계정 이름을 기본값으로 프리필한다. (2) `/profile`에서 이름/닉네임/자기소개/웹사이트/아바타를 자유롭게 수정할 수 있는 편집 기능을 추가한다. shrimp-task-manager로 9개 원자적 태스크(`plan_task`→`analyze_task`→`reflect_task`→`split_tasks`)로 분해해 순차 실행한다.
+
+#### 핵심 기능 — 기능 1: 닉네임 강제 설정
+
+- [x] `lib/validations/profile.ts` 신설 — `usernameSchema`(3~20자, 영문/숫자/밑줄, 빈 문자열 허용)를 단독 정의하고 `nicknameFormSchema`/`profileFormSchema`가 공유 — `MUST`
+- [x] `lib/supabase/proxy.ts` 인증 가드 확장 — 로그인 상태에서 `profiles.username`이 NULL이면 `/auth/nickname?next=`으로 리다이렉트 — `MUST`
+- [x] `app/auth/nickname/actions.ts`(`setNickname`) — 23505(중복) 처리(`app/events/[id]/participants-actions.ts` 패턴 재사용) — `MUST`
+- [x] `components/auth/nickname-form.tsx` — RHF+zod, username 단일 필드, OAuth 가입자는 `profiles.full_name`(트리거가 이미 채워둔 값)을 기본값으로 프리필 — `MUST`
+- [x] `app/auth/nickname/page.tsx` — Server Component, 완료 후 `next` 파라미터로 원래 목적지 복귀 — `MUST`
+
+훅 지점은 이메일/OAuth 콜백을 개별로 건드리지 않고 `lib/supabase/proxy.ts`의 인증 가드 한 곳에서 처리했다 — 두 가입 경로 모두 결국 보호된 페이지를 거치므로 이 지점만 확장하면 충분하고 로직이 한 곳에 모인다. `handle_new_user()` 트리거는 수정하지 않았다(username은 트리거로 채울 수 없는 사용자 입력값). 기존 사용자 중 username이 NULL인 계정도 다음 보호 경로 접근 시 자연스럽게 요구받으므로 별도 백필은 하지 않았다. 계획 단계에서는 "화이트리스트에 `/auth/nickname` 추가"를 별도 작업으로 상정했으나, 구현 중 확인한 결과 기존 `!pathname.startsWith("/auth")` 예외가 `/auth/nickname`도 이미 포괄하고 있어 별도 코드 추가 없이 무한루프가 방지됨을 확인했다.
+
+#### 핵심 기능 — 기능 2: 프로필 편집
+
+- [x] `supabase/migrations/20260818224559_create_avatars_storage_bucket.sql` — 아바타 업로드용 public 버킷(2MB, image/\* 제한), `{auth.uid()}/{filename}` 경로만 INSERT 허용, UPDATE/DELETE 정책 없음(event-covers와 동일하게 MVP 범위 외) — `MUST`
+- [x] `app/profile/actions.ts`에 `updateProfile()` 추가 — 빈 문자열 필드는 `null`로 정규화, 23505 처리 — `MUST`
+- [x] `components/profile/profile-edit-form.tsx` — RHF+zod+Storage 직접 업로드(`components/events/event-form.tsx` 패턴 재사용) — `MUST`
+- [x] `app/profile/edit/page.tsx` 신설, `Suspense` 래핑(`app/events/[id]/edit/page.tsx` 패턴) — `MUST`
+- [x] `app/profile/page.tsx`에 "편집" 버튼 추가(조회 select문은 그대로 유지) — `MUST`
+
+진입 UX는 별도 `/profile/edit` 페이지(Dialog/인라인 아님)로 결정 — `app/events/[id]/edit/page.tsx` 선례와 일관되고, 조회 페이지에 폼 상태를 얹지 않아도 되어 구현 비용이 낮다.
+
+#### 완료 기준(체크리스트)
+
+- [x] `npm run lint`, `npm run build`가 매 태스크마다 통과
+- [x] `mcp__supabase__get_advisors`로 신규 정책 보안 점검 — 새 경고 없음(기존 무관 경고 5건만 존재)
+- [x] SQL 트랜잭션 시뮬레이션(rollback)으로 `avatars` 버킷 RLS 3가지 케이스(본인 폴더 업로드 성공/타인 폴더 업로드 차단/공개 조회 성공) 확인
+- [x] 이메일 가입 → 닉네임 설정 페이지로 강제 이동 → 저장 → 원래 목적지로 복귀 확인
+- [x] `/profile` → 편집 → 각 필드 수정 후 저장, 아바타 업로드 → Storage에 `{uid}/...` 경로로 저장 확인
+- [x] 중복 username 저장 시 에러 메시지 확인
+- [ ] Google 가입 → 닉네임 필드에 계정 이름이 기본값으로 채워지는지 확인 (OAuth 로그인은 브라우저 동의 화면을 거쳐야 해 자동화 불가, 이메일 가입 계정으로는 `toUsernameCandidate()` 로직만 코드로 검증)
+
+**✅ 완료 — 실제 브라우저(playwright MCP) end-to-end 검증까지 통과.** shrimp-task-manager로 9개 원자적 태스크로 분해해 순차 실행, 각 태스크를 `verify_task`로 검증. 구현 중 계획에 없던 이슈 2건을 발견해 수정: (1) `/auth/nickname/page.tsx`에서 `searchParams`를 `Suspense` 경계 밖(default export)에서 `await`하면 Next.js 16 Cache Components의 "Blocking Route" 에러로 빌드가 실패함을 확인 — `app/events/[id]/edit/page.tsx`처럼 `searchParams` Promise를 그대로 하위 Server Component에 넘기고 그 안에서 `await`하도록 수정. (2) OAuth `full_name`(예: "홍길동", 공백/한글 포함)을 닉네임 기본값으로 그대로 프리필하면 `usernameSchema` 정규식(영문/숫자/밑줄)에 걸려 대부분의 한국어 이름 사용자가 제출 시 항상 검증 실패했을 것 — `toUsernameCandidate()` 헬퍼로 정제 후 3자 미만이면 빈 문자열로 폴백.
+
+**실사용 브라우저 검증(2026-08-19, playwright MCP, 테스트 계정 `vibecoding@gmail.com`)** — 코드 정적 검증 이후 사용자 요청으로 실제 회원가입부터 재검증했고, 그 과정에서 정적 검증만으로는 잡지 못한 런타임 버그 1건을 추가로 발견해 수정했다: `app/auth/nickname/page.tsx`가 `onSubmitAction={(values) => setNickname(values, next)}`처럼 인라인 화살표 함수를 Server Component에서 Client Component(`NicknameForm`) prop으로 넘기고 있었는데, Next.js는 Server Action 참조(`.bind()`로 인자를 미리 채운 함수)만 경계를 넘길 수 있고 임의의 클로저는 직렬화할 수 없어 `/auth/nickname` 진입 시 100% 런타임 에러가 발생했다("Event handlers cannot be passed to Client Component props"). `event-form.tsx`가 `onSubmitAction={updateEvent.bind(null, id)}` 형태로 이미 이 제약을 우회하고 있었다는 걸 뒤늦게 인지 — `setNickname`의 인자 순서를 `(values, next)`에서 `(next, values)`로 바꿔 `setNickname.bind(null, next)`로 넘기도록 수정했다(빌드/타입체크는 이 문제를 잡지 못하고 런타임에만 드러남).
+전체 시나리오: 회원가입(이메일 미확인 상태를 SQL로 직접 `email_confirmed_at` 갱신해 우회) → 로그인 → 보호 경로(`/events`) 접근 시 `/auth/nickname?next=%2Fevents`로 강제 리다이렉트 확인 → 닉네임 `vibecoding` 저장 후 `/events`로 정상 복귀 → `/profile/edit`에서 이름/닉네임/자기소개/웹사이트 텍스트 필드와 실제 이미지 파일 업로드(아바타)까지 저장 → DB(`profiles` 테이블) 조회로 5개 필드 전부와 Storage 경로(`avatars/{uid}/{timestamp}-{filename}`)가 정확히 반영됨을 확인 → 두 번째 테스트 계정(`vibecoding2@gmail.com`)으로 동일 닉네임 `vibecoding` 설정 시도 시 "이미 사용 중인 아이디입니다" 에러가 실제로 노출됨을 확인. 콘솔 에러 0건(버그 수정 이후).
+
+#### 위험 요소
+
+- **기존 로그인 세션 영향**: 가드를 배포하는 즉시, username이 NULL인 기존 로그인 사용자는 다음 페이지 이동 시 닉네임 설정을 강제로 요구받는다 — 의도된 동작이지만 갑작스러운 흐름 변경으로 인지될 수 있다.
+- **Storage 고아 파일**: `avatars` 버킷도 `event-covers`와 동일하게 UPDATE/DELETE 정책을 두지 않아, 아바타를 교체해도 이전 파일이 정리되지 않는다(MVP 범위 제외, 후속 과제로 남김).
+- **이메일 확인 템플릿 경유 시 next 유실 가능성**: Phase 9에서 이미 확인된 동일 제약 — Supabase 대시보드의 이메일 템플릿이 `next`를 실어 나르지 않으면 닉네임 설정 후 원래 목적지가 아닌 `/`로 이동할 수 있다.
+
+---
+
 ## 주요 마일스톤
 
 | 마일스톤                                       | 완료 기준                                                                             | 핵심 산출물                                                                        | 상태    |
@@ -442,6 +489,7 @@ Phase 2 완료 후, Gather 앱 참고 이미지를 바탕으로 지금까지 만
 | M8. 버그 수정·이미지 UX 개선 완료              | Phase 8 완료 기준 충족                                                                | NaN 에러 수정, 취소된 모임 숨김, 커버 이미지 URL 실시간 검증, object-contain 전환  | ✅ 완료 |
 | M9. 초대 링크·모바일 레이아웃·참여자 목록 완료 | Phase 9 완료 기준 충족                                                                | 초대 링크 `next` 딥링크, 브레이크포인트 1024px 상향, 승인된 참여자 목록 UI         | ✅ 완료 |
 | M10. 회원 탈퇴 기능 완료                       | Phase 10 완료 기준 충족                                                               | service_role admin 클라이언트, `deleteAccount` Server Action, 탈퇴 확인 UI         | ✅ 완료 |
+| M11. 닉네임 설정·프로필 편집 완료              | Phase 11 완료 기준 충족                                                               | 닉네임 강제 설정 플로우, avatars Storage 버킷, `/profile/edit` 프로필 편집 기능    | ✅ 완료 |
 
 ## 크로스컷팅 관심사(Cross-cutting Concerns)
 
